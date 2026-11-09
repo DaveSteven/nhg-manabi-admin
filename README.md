@@ -1,174 +1,116 @@
-<p align="center">
-  <a href="http://github.com/zuiidea/antd-admin" target="_blank">
-    <img alt="antd-admin-logo" height="80" src="./public/favicon.svg">
-  </a>
-</p>
+# nhg-manabi-admin
 
-<h1 align="center">Antd Admin</h1>
+JLPT GO! 管理端（nhg-manabi），基于 React 19 + Ant Design 6 + Vite+ 的后台管理应用。当前核心功能为「真题校正」——从学生端项目 [`nhg-manabi-web`](../nhg-manabi-web) 迁移而来，对接真实后端 [`nhg-manabi-api`](../nhg-manabi-api)。
 
-<div align="center">
+## 技术栈
 
-English-only admin scaffold (no Lingui): MSW mocks, minimal RBAC, full CRUD, and Playwright E2E — built with React 19, Ant Design 6, and Vite+. For Lingui-based i18n (en + zh), use the sibling app [`apps/with-lingui`](../with-lingui/).
+| 分类 | 技术 |
+| --- | --- |
+| 构建工具 | [Vite+](https://viteplus.dev)（`vp` 统一命令行） |
+| UI 框架 | [Ant Design 6.x](https://ant.design) |
+| 路由 | [TanStack Router](https://tanstack.com/router)（文件式路由） |
+| 异步状态 | [TanStack Query v5](https://tanstack.com/query) |
+| 本地状态 | [Zustand](https://zustand.docs.pmnd.rs)（auth / settings 持久化） |
+| 校验 | [Zod v4](https://zod.dev)（API 契约 schema） |
+| 图标 | [lucide-react](https://lucide.dev/guide/packages/lucide-react) |
+| API Mock | [MSW 2.x](https://mswjs.io)（Service Worker，显式开启） |
+| E2E 测试 | [Playwright](https://playwright.dev) |
+| 语言 | TypeScript 5.9（strict） |
 
-[![antd](https://img.shields.io/badge/AntD-^6.0.0-1890ff?style=flat-square&logo=ant-design)](https://github.com/ant-design/ant-design)
-[![react](https://img.shields.io/badge/React-19.2-61dafb?style=flat-square&logo=react)](https://react.dev)
-[![vite](https://img.shields.io/badge/Vite+-Latest-646cff?style=flat-square&logo=vite)](https://viteplus.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![GitHub issues](https://img.shields.io/github/issues/zuiidea/antd-admin?style=flat-square)](https://github.com/zuiidea/antd-admin/issues)
-[![GitHub stars](https://img.shields.io/github/stars/zuiidea/antd-admin?style=flat-square)](https://github.com/zuiidea/antd-admin/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](http://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](https://github.com/zuiidea/antd-admin/pulls)
+## 功能
 
-</div>
+- **真题校正（`/exam-questions`）** — 真题列表（关键词/等级/分类/答案状态/解析状态筛选 + 分页）、校正编辑器（正确选项、答案与解析状态、翻译、结构化解析、学生端预览、版本历史），修改自动记录 revision
+- **真实后端对接** — 单 Bearer token 认证（`POST /api/auth/login`）、`GET /api/me` 会话恢复、401 自动登出、响应 schema 校验（snake_case 契约原样保留）
+- **权限** — 由后端 `is_admin` 派生前端权限（复用 `user:view`），控制菜单与路由访问，无权限跳 403
+- **URL 优先状态** — 筛选、分页、选中题目均同步到 URL search params，可深链
+- **暗色模式** — Ant Design 算法一键切换
+- **MSW Mock（可选）** — 镜像真实 API 契约（裸 JSON、snake_case），本地无后端时开发用
 
-## Tech Stack
+## 快速开始
 
-| Category     | Technology                                                             |
-| ------------ | ---------------------------------------------------------------------- |
-| Build Tool   | [Vite+](https://viteplus.dev) (VoidZero unified toolchain)             |
-| UI Framework | [Ant Design 6.x](https://ant.design)                                   |
-| Routing      | [TanStack Router](https://tanstack.com/router) (file-based, type-safe) |
-| Async State  | [TanStack Query v5](https://tanstack.com/query)                        |
-| Local State  | [Zustand](https://zustand.docs.pmnd.rs) (persisted auth & settings)    |
-| Validation   | [Zod v4](https://zod.dev) (schemas, API contracts, form validation)    |
-| UI language  | English strings in source (no i18n framework)                          |
-| Icons        | [lucide-react](https://lucide.dev/guide/packages/lucide-react)         |
-| API Mocking  | [MSW 2.x](https://mswjs.io) (Service Worker based)                     |
-| E2E Testing  | [Playwright](https://playwright.dev)                                   |
-| Language     | TypeScript 5.9 (strict mode)                                           |
+### 前置要求
 
-## Features
+- Node.js >= 20
+- [Vite+](https://viteplus.dev/guide/) CLI（`vp`，或直接使用 `node_modules/.bin/vp`）
+- 真实后端：见 [`nhg-manabi-api`](../nhg-manabi-api)（本地 Docker：`nhg-manabi-api` 容器，端口 8000）
 
-- **JWT Authentication** — Login with access/refresh token flow, persisted via Zustand
-- **Dynamic Menu & RBAC** — Backend-driven sidebar menu with permission guards and 403 page
-- **URL-First State** — Table search params (page, pageSize, keyword, sort) synced to URL
-- **English-only** — No Lingui or locale catalogs; Ant Design uses a fixed `en_US` locale. See [`apps/with-lingui`](../with-lingui/) for bilingual LinguiJS.
-- **Dark Mode** — One-click toggle with Ant Design theme algorithm
-- **Full Type Safety** — Zod schemas validate API boundaries at runtime where used
-- **Zero-Config Mocking** — MSW intercepts API calls in development, no backend needed
-
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org) >= 20
-- [Vite+](https://viteplus.dev/guide/) CLI (`vp`)
-
-### Install & Run
-
-From the monorepo root, or after `cd apps/basic`:
+### 安装与运行
 
 ```bash
-cd apps/basic
-vp install
-vp dev
+pnpm install   # 或 vp install
+pnpm dev       # 即 vp dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) — you'll be redirected to the login page.
+打开 [http://localhost:5180](http://localhost:5180)（端口 5180，避开学生端 dev server 的 5173）。
 
-**Default credentials:** `admin` / `admin`
+- 开发模式默认**直连真实后端**：vite dev server 将 `/api` 代理到 `http://127.0.0.1:8000`，无 CORS 问题
+- 登录账号来自后端数据库（管理员账号可查 `users` 表中 `is_admin = t` 的记录）
 
-### Build
+### Mock 模式（无后端开发）
 
 ```bash
-vp build
-vp preview
+VITE_ENABLE_MOCK=true pnpm dev
 ```
 
-### E2E Tests
+MSW 拦截 `/api` 请求（登录 `admin` / `admin`），auth、users、exam-questions 均有 mock 数据。mock 响应与真实后端契约一致（裸 JSON、snake_case）。
+
+### 构建与检查
 
 ```bash
-cd apps/basic
-pnpm run test:e2e
-pnpm run test:e2e:core
-pnpm run test:e2e:ui   # interactive UI mode
+pnpm build                 # tsc + vp build
+vp check --no-fmt          # 格式 / lint / 类型检查
 ```
 
-`test:e2e:core` runs the scaffold's highest-value flows only: login and users CRUD.
+### E2E 测试
 
-## Project Structure
+```bash
+pnpm run test:e2e        # 全部
+pnpm run test:e2e:core   # login + users 核心流程
+pnpm run test:e2e:ui     # 交互式 UI 模式
+```
+
+Playwright 独立起 dev server 于 `127.0.0.1:5181`（强制 IPv4，避免 macOS 上 vite 默认仅绑 IPv6 导致探测失败）。
+
+## 页面
+
+| 路由 | 说明 |
+| --- | --- |
+| `/login` | 登录（真实后端单 token） |
+| `/dashboard` | 概览（模板演示数据） |
+| `/exam-questions` | **真题校正**：筛选列表 + 校正编辑器 + 版本历史 |
+| `/users` | 用户 CRUD（模板演示，MSW mock 数据；真实后端暂无用户 CRUD 接口） |
+| `/403` / `/404` | 无权限 / 未找到 |
+
+## 项目结构
 
 ```
 src/
-├── api/                  # Zod schemas, endpoint constants, type exports
-│   ├── schemas.ts        # Domain models (User, AuthTokens, MenuItem, etc.)
-│   ├── auth.ts           # Auth endpoint constants
-│   └── user.ts           # User CRUD endpoint constants
-├── components/
-│   ├── Aurora/           # Login background effect
-│   ├── Auth/             # Auth (permission gate): index.tsx
-│   ├── DataTable/        # Shared table shell, skeleton, empty state
-│   ├── FilterToolbar/    # Shared filter/action toolbar
-│   ├── FormModal/        # Reusable modal + form shell
-│   ├── Icon/             # Shared icons and theme toggle icon
-│   └── Layout/           # Admin shell (sidebar, header, main)
-│       ├── MainLayout/  # Main layout shell: index.tsx
-│       ├── AppFooter/    # Login footer: Powered by + GitHub → zuiidea/antd-admin
-│       ├── Sidebar/      # Dynamic menu sidebar: index.tsx
-│       ├── UserMenu/     # User dropdown in sidebar: index.tsx + index.css
-│       └── Header/       # Top bar: index.tsx
-├── hooks/
-│   ├── tokenBuilders.ts  # Shared Ant Design token/config builders
-│   ├── useAppTheme.ts    # Theme selection hook (ConfigProvider)
-│   ├── usePermission.ts  # Permission check hook
-│   └── useResourceCRUD.ts # Shared CRUD query/mutation wiring
+├── api/                        # Zod schema、端点常量
+│   ├── schemas.ts              # 领域模型（Session/SessionUser、ExamQuestion* 等）
+│   ├── auth.ts                 # 认证端点（login/logout/me）
+│   ├── user.ts                 # 用户 CRUD 端点（模板演示）
+│   └── examQuestion.ts         # 真题校正端点 + 请求/响应 schema 解析
+├── routes/
+│   ├── _auth/exam-questions/   # 真题校正页（index + -QuestionFilters/-QuestionList/-QuestionEditor）
+│   ├── _auth/users/            # 用户 CRUD（模板演示）
+│   ├── _auth/dashboard/ · _auth/403/ · login/ · 404/
+├── stores/auth.ts              # 单 token 认证状态（持久化 auth-storage）
 ├── utils/
-│   ├── constants.ts      # API base URL, static assets
-│   └── http.ts           # HTTP client with JWT injection & error handling
-├── mocks/
-│   ├── browser.ts        # MSW worker setup
-│   ├── createHandler.ts  # Shared MSW success/error/delay helpers
-│   ├── data.ts           # Mock seed data (users, menus)
-│   ├── utils.ts          # Mock-only helpers (filters, pagination, demo avatar URLs)
-│   └── handlers/         # Request handlers (auth, user CRUD)
-├── routes/               # TanStack Router file-based routes
-│   ├── __root.tsx        # Root layout (QueryClient, ConfigProvider, en_US)
-│   ├── _auth.tsx         # Auth guard layout (redirects to /login)
-│   ├── _auth/dashboard/index.tsx
-│   ├── _auth/users/index.tsx   # Full CRUD with URL-synced search params
-│   ├── _auth/403/index.tsx
-│   ├── login/index.tsx
-│   ├── 404/index.tsx
-│   └── index.tsx         # Redirects / → /login
-├── stores/
-│   ├── auth.ts           # Auth store (tokens, user, menus, permissions)
-│   ├── createPersistentStore.ts # Shared persisted-store factory
-│   └── settings.ts       # Settings store (darkMode, sidebar)
-└── main.tsx              # Entry point (MSW init → React render)
-
-e2e/                    # Playwright E2E tests
-├── helpers.ts
-├── login.spec.ts
-└── users.spec.ts
+│   ├── http.ts                 # HTTP 客户端（Bearer 注入、401 登出、裸 JSON 兼容）
+│   ├── session.ts              # GET /api/me 会话恢复 + 权限派生 + 菜单过滤
+│   └── appMenu.ts              # 内置菜单树 + 路径权限映射
+├── mocks/                      # MSW（镜像真实契约；VITE_ENABLE_MOCK=true 时启用）
+└── main.tsx                    # 入口（MSW 按环境变量开关 → React 渲染）
 ```
 
-## Language & i18n
+## 部署要点（本地 Docker 后端）
 
-This template is **English-only**: user-facing copy lives in components and routes as plain strings; there is no Lingui catalog or language switcher.
+- 后端容器：`nhg-manabi-api`（8000）/ `nhg-manabi-db`（5432），见 `nhg-manabi-api/docker-compose.yml`
+- 后端 `CORS_ORIGINS` 已包含 `localhost:5180`；开发态经 vite 代理为同源请求，通常不触发 CORS
+- 数据卷 `japanese_study_api_postgres_data` 为 external 引用，数据库随旧部署目录无缝迁移
 
-For **LinguiJS** (English + Chinese, `.po` extract/compile, and Ant Design locale switching), use [`apps/with-lingui`](../with-lingui/).
+## 开发须知
 
-## Extending the template
-
-- **Real backend:** Point `VITE_API_BASE_URL` in env and disable or remove MSW in `main.tsx` when you no longer need mocks.
-- **Add i18n:** Start from [`apps/with-lingui`](../with-lingui/) or port Lingui setup from that app; this `basic` tree intentionally omits it.
-
-## Developer Notes
-
-- Prefer Vite+ commands for installs, checks, and scripts. This repo is configured around `vp`.
-- Run `vp check --no-fmt` for type/lint validation.
-- Core regression coverage lives in the login and users E2E flows.
-
-## Pages
-
-| Route        | Description                                                 |
-| ------------ | ----------------------------------------------------------- |
-| `/login`     | Login form with validation                                  |
-| `/dashboard` | Statistics overview cards                                   |
-| `/users`     | User CRUD table with search, pagination, create/edit/delete |
-| `/403`       | Forbidden error page                                        |
-| `/404`       | Not found error page                                        |
-
-## License
-
-MIT
+- 使用 Vite+ 命令（`vp install` / `vp check` / `vp test`），不要直接调用 pnpm/npm 底层命令；详见 [AGENTS.md](./AGENTS.md)
+- API 契约字段保持后端 snake_case 原样，不做改名映射
+- 领域文案（状态、提示）为中文；模板页面（登录/用户）保留英文
