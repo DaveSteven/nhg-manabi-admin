@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { App, Button, Flex, Spin, Typography, theme } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Crosshair, Save } from "lucide-react";
+import { ArrowLeft, Crosshair } from "lucide-react";
 import { z } from "zod/v4";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -38,6 +38,7 @@ function seedDraft(detail: ExamQuestionDetail): ExamQuestionUpdate {
     correct_option_id: detail.correct_option_id,
     answer_status: detail.answer_status,
     analysis_status: detail.analysis_status,
+    subtitle: detail.subtitle,
     translation: detail.translation,
     analysis: detail.analysis,
     analysis_document: detail.analysis_document,
@@ -268,15 +269,6 @@ function PaperRevisionPage() {
               {dirtyCount} 题未保存
             </Typography.Text>
           ) : null}
-          <Button
-            type="primary"
-            icon={<Save size={token.fontSize} />}
-            disabled={dirtyCount === 0}
-            loading={saveGroupMutation.isPending}
-            onClick={() => saveGroupMutation.mutate()}
-          >
-            保存整組
-          </Button>
           <Button icon={<Crosshair size={token.fontSize} />} onClick={jumpToFirstPending}>
             定位到第一道未完成
           </Button>

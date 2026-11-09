@@ -172,7 +172,7 @@ export function LayerWorkbench({
         ...style,
       }}
     >
-      <Flex justify="space-between" align="flex-start" gap={token.marginSM} wrap="wrap">
+      <Flex align="flex-start">
         <div>
           <Text type="secondary">{layerGroup?.problemLabel ?? ""}</Text>
           <Text strong style={{ fontSize: token.fontSizeLG, display: "block" }}>
@@ -182,15 +182,6 @@ export function LayerWorkbench({
             <Text type="secondary">{layerGroup.layerTitle}</Text>
           ) : null}
         </div>
-        <Button
-          type="primary"
-          icon={<Save size={token.fontSize} />}
-          disabled={dirtyCount === 0}
-          loading={saving}
-          onClick={onSaveGroup}
-        >
-          {dirtyCount > 0 ? `保存整組（${dirtyCount} 题未保存）` : "保存整組"}
-        </Button>
       </Flex>
 
       {layerImageUrl ? (
@@ -363,20 +354,14 @@ export function LayerWorkbench({
               {detail.media_url ? (
                 <audio controls preload="none" src={detail.media_url} style={{ width: "100%", marginTop: token.marginSM }} />
               ) : null}
-              {detail.category === "listening" && detail.subtitle ? (
-                <div
-                  style={{
-                    marginTop: token.marginMD,
-                    padding: token.paddingMD,
-                    borderRadius: token.borderRadiusLG,
-                    background: token.colorFillAlter,
-                    lineHeight: 1.8,
-                  }}
-                >
-                  <Text strong style={{ display: "block", marginBottom: token.marginSM }}>
-                    听力原文
-                  </Text>
-                  <HtmlBlock html={detail.subtitle} />
+              {detail.category === "listening" ? (
+                <div style={{ marginTop: token.marginMD }}>
+                  <RichTextArea
+                    label="听力原文"
+                    value={draft.subtitle}
+                    className="transcript-quill"
+                    onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, subtitle: value }))}
+                  />
                 </div>
               ) : null}
               {detail.image_url ? (

@@ -330,6 +330,7 @@ export const ExamQuestionUpdateSchema = z.object({
   correct_option_id: z.int().nullable(),
   answer_status: z.string(),
   analysis_status: z.string(),
+  subtitle: z.string().default(""),
   translation: z.string().default(""),
   analysis: z.string().default(""),
   analysis_document: z.record(z.string(), z.unknown()).default({}),

@@ -63,6 +63,12 @@
   font-size: 14px;
 }
 
+.transcript-quill .ql-editor {
+  min-height: 180px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
 /* 学生端预览：解析正文按 HTML 渲染 */
 .analysis-preview p {
   margin: 0 0 8px;
