@@ -23,6 +23,11 @@ export default defineConfig({
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
+      /** 题组图片 / 听力音频等静态资源（backend asset_url）。 */
+      "/assets": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
     },
   },
   resolve: {

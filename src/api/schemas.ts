@@ -220,9 +220,35 @@ export const ExamQuestionListItemSchema = z.object({
   analysis_status: z.string(),
   answer_version: z.int(),
   reviewed_at: z.string().nullable(),
+  /** 题组 (layer) info — grammar/reading groups share one passage across 小题. */
+  layer_id: z.int(),
+  layer_order: z.int(),
+  layer_title: z.string(),
+  options: z.array(ExamOptionSchema),
 });
 
 export type ExamQuestionListItem = z.infer<typeof ExamQuestionListItemSchema>;
+
+/** Exam paper with review progress — 真题校正 paper list. */
+export const AdminExamListItemSchema = z.object({
+  id: z.int(),
+  title: z.string(),
+  level: z.string(),
+  exam_date: z.int().nullable(),
+  question_count: z.int(),
+  answer_confirmed: z.int(),
+  analysis_reviewed: z.int(),
+  disputed: z.int(),
+});
+
+export type AdminExamListItem = z.infer<typeof AdminExamListItemSchema>;
+
+export const AdminExamListSchema = z.object({
+  items: z.array(AdminExamListItemSchema),
+  total: z.int(),
+});
+
+export type AdminExamList = z.infer<typeof AdminExamListSchema>;
 
 export const ExamQuestionListSchema = z.object({
   items: z.array(ExamQuestionListItemSchema),
@@ -264,6 +290,10 @@ const ExamQuestionDetailBaseSchema = ExamQuestionListItemSchema.omit({
   correct_option_id: true,
   category: true,
   category_label: true,
+  // Detail responses carry only `layer_id` (the layer external id), not the
+  // list-only layer_order/layer_title grouping fields.
+  layer_order: true,
+  layer_title: true,
 });
 
 export const ExamQuestionDetailSchema = ExamQuestionDetailBaseSchema.extend({
@@ -284,6 +314,16 @@ export const ExamQuestionDetailSchema = ExamQuestionDetailBaseSchema.extend({
 }).transform((detail) => ({ ...detail, ...examCategoryFromType(detail.question_type) }));
 
 export type ExamQuestionDetail = z.infer<typeof ExamQuestionDetailSchema>;
+
+/** 問題工作台：整組小题的修订数据。 */
+export const ExamQuestionLayerSchema = z.object({
+  items: z.array(ExamQuestionDetailSchema),
+  total: z.int(),
+  /** 题组级共享图片（读解图表/听力场景图）。 */
+  layer_image_url: z.string().nullable().catch(null),
+});
+
+export type ExamQuestionLayer = z.infer<typeof ExamQuestionLayerSchema>;
 
 export const ExamQuestionUpdateSchema = z.object({
   /** Nullable: questions without a marked correct option return null from the API. */
