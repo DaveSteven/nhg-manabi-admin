@@ -1,0 +1,298 @@
+import { z } from "zod/v4";
+
+export const UserSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  avatar: z.string().nullable(),
+  email: z.string().nullable(),
+  roles: z.array(z.string()),
+  permissions: z.array(z.string()),
+});
+
+export type User = z.infer<typeof UserSchema>;
+
+/** GET `/api/auth/user` body (no `permissions`; load via `/api/auth/permissions`). */
+export const AuthUserResponseSchema = UserSchema.omit({ permissions: true });
+export type AuthUserResponse = z.infer<typeof AuthUserResponseSchema>;
+
+export const AuthTokensSchema = z.object({
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+});
+
+export type AuthTokens = z.infer<typeof AuthTokensSchema>;
+
+export const LoginRequestSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
+export type LoginRequest = z.infer<typeof LoginRequestSchema>;
+
+export const PermissionsListSchema = z.array(z.string());
+
+export type PermissionsList = z.infer<typeof PermissionsListSchema>;
+
+const BaseMenuNodeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string().nullable(),
+  permissions: z.array(z.string()).nullable(),
+  sort: z.int(),
+  hidden: z.boolean(),
+});
+
+export type MenuItem =
+  | (z.infer<typeof BaseMenuNodeSchema> & {
+      kind: "item";
+      path: string;
+      children: MenuItem[] | null;
+    })
+  | (z.infer<typeof BaseMenuNodeSchema> & {
+      kind: "group";
+      path: null;
+      children: MenuItem[];
+    });
+
+export const MenuItemSchema: z.ZodType<MenuItem> = z.lazy(() =>
+  z.discriminatedUnion("kind", [
+    BaseMenuNodeSchema.extend({
+      kind: z.literal("item"),
+      path: z.string(),
+      children: z.array(MenuItemSchema).nullable(),
+    }),
+    BaseMenuNodeSchema.extend({
+      kind: z.literal("group"),
+      path: z.null(),
+      children: z.array(MenuItemSchema),
+    }),
+  ]),
+);
+
+export function ApiResponseSchema<T extends z.ZodTypeAny>(dataSchema: T) {
+  return z.object({
+    code: z.int(),
+    data: dataSchema,
+    message: z.string(),
+  });
+}
+
+export type ApiResponse<T> = {
+  code: number;
+  data: T;
+  message: string;
+};
+
+export function PaginatedResponseSchema<T extends z.ZodTypeAny>(itemSchema: T) {
+  return z.object({
+    code: z.int(),
+    data: z.object({
+      list: z.array(itemSchema),
+      total: z.int(),
+    }),
+    message: z.string(),
+  });
+}
+
+export type PaginatedData<T> = {
+  list: T[];
+  total: number;
+};
+
+export const SearchParamsSchema = z.object({
+  page: z.number().int().positive().catch(1),
+  pageSize: z.number().int().positive().catch(10),
+  sortField: z.string().nullable().catch(null),
+  sortOrder: z.enum(["ascend", "descend"]).nullable().catch(null),
+});
+
+export type SearchParams = z.infer<typeof SearchParamsSchema>;
+
+/** Ant Design Input submits `""` when empty; treat as null for optional email */
+const createUserEmailSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v == null) return null;
+    const t = String(v).trim();
+    return t === "" ? null : t;
+  })
+  .pipe(z.union([z.string().email(), z.null()]));
+
+export const CreateUserRequestSchema = z.object({
+  username: z.string().min(1),
+  email: createUserEmailSchema,
+  roles: z.array(z.string()).min(1),
+});
+
+export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
+
+export const UpdateUserRequestSchema = CreateUserRequestSchema.partial();
+
+export type UpdateUserRequest = z.infer<typeof UpdateUserRequestSchema>;
+
+/**
+ * Real backend (`nhg-manabi-api`) session user (`UserOut`).
+ * Field names stay snake_case to match the API contract verbatim.
+ */
+export const SessionUserSchema = z.object({
+  id: z.int(),
+  username: z.string(),
+  display_name: z.string(),
+  current_level: z.string(),
+  is_admin: z.boolean(),
+});
+
+export type SessionUserBase = z.infer<typeof SessionUserSchema>;
+
+/** `POST /api/auth/login` response: single bearer token, unwrapped JSON. */
+export const SessionSchema = z.object({
+  token: z.string().min(1),
+  expires_at: z.string(),
+  user: SessionUserSchema,
+});
+
+export type Session = z.infer<typeof SessionSchema>;
+
+/**
+ * Frontend session user: base `UserOut` plus permissions derived from
+ * `is_admin` (the real backend has no permissions endpoint).
+ */
+export type SessionUser = SessionUserBase & { permissions: string[] };
+
+/** Permission granted to admins; gates the 真题校正 page (reuses user:view). */
+export const ADMIN_PERMISSIONS = ["user:view"] as const;
+
+export function toSessionUser(base: SessionUserBase): SessionUser {
+  return { ...base, permissions: base.is_admin ? [...ADMIN_PERMISSIONS] : [] };
+}
+
+/*
+ * Exam question review (真题校正) — `nhg-manabi-api` `/api/admin/exam-questions`.
+ * All field names stay snake_case to match the API contract verbatim.
+ */
+
+export const ANSWER_STATUSES = [
+  { value: "unverified", label: "未校验" },
+  { value: "auto_verified", label: "自动校验" },
+  { value: "verified", label: "人工确认" },
+  { value: "disputed", label: "存疑" },
+  { value: "corrected", label: "已修正" },
+] as const;
+
+export const ANALYSIS_STATUSES = [
+  { value: "missing", label: "缺少解析" },
+  { value: "draft", label: "整理草稿" },
+  { value: "reviewed", label: "审核完成" },
+  { value: "disputed", label: "解析存疑" },
+] as const;
+
+export const EXAM_CATEGORIES = [
+  { value: "", label: "全部分类" },
+  { value: "vocabulary", label: "文字词汇" },
+  { value: "grammar", label: "文法" },
+  { value: "reading", label: "读解" },
+  { value: "listening", label: "听力" },
+] as const;
+
+export const EXAM_LEVELS = ["N5", "N4", "N3", "N2", "N1"] as const;
+
+export const ExamOptionSchema = z.object({
+  id: z.int(),
+  text: z.string(),
+  source_order: z.int(),
+});
+
+export type ExamOption = z.infer<typeof ExamOptionSchema>;
+
+export const ExamQuestionListItemSchema = z.object({
+  id: z.int(),
+  exam_id: z.int(),
+  exam_title: z.string(),
+  level: z.string(),
+  order_index: z.int(),
+  question_type: z.int().nullable(),
+  category: z.string(),
+  category_label: z.string(),
+  title: z.string(),
+  passage: z.string(),
+  correct_option_id: z.int().nullable(),
+  answer_status: z.string(),
+  analysis_status: z.string(),
+  answer_version: z.int(),
+  reviewed_at: z.string().nullable(),
+});
+
+export type ExamQuestionListItem = z.infer<typeof ExamQuestionListItemSchema>;
+
+export const ExamQuestionListSchema = z.object({
+  items: z.array(ExamQuestionListItemSchema),
+  total: z.int(),
+  page: z.int(),
+  page_size: z.int(),
+});
+
+export type ExamQuestionList = z.infer<typeof ExamQuestionListSchema>;
+
+export const ExamQuestionRevisionSchema = z.object({
+  id: z.int(),
+  user_id: z.int(),
+  before: z.record(z.string(), z.unknown()),
+  after: z.record(z.string(), z.unknown()),
+  note: z.string(),
+  created_at: z.string(),
+});
+
+export type ExamQuestionRevision = z.infer<typeof ExamQuestionRevisionSchema>;
+
+/**
+ * Detail response omits `category`/`category_label` (the list serializer adds
+ * them but the detail serializer does not), so they are derived from
+ * `question_type` — same rules as the backend's `exam_question_category`.
+ */
+function examCategoryFromType(questionType: number | null): {
+  category: string;
+  category_label: string;
+} {
+  const value = questionType ?? 0;
+  if (value >= 41) return { category: "listening", category_label: "听力" };
+  if (value >= 31) return { category: "reading", category_label: "读解" };
+  if (value >= 21) return { category: "grammar", category_label: "文法" };
+  return { category: "vocabulary", category_label: "文字词汇" };
+}
+
+const ExamQuestionDetailBaseSchema = ExamQuestionListItemSchema.omit({
+  correct_option_id: true,
+  category: true,
+  category_label: true,
+});
+
+export const ExamQuestionDetailSchema = ExamQuestionDetailBaseSchema.extend({
+  correct_option_id: z.int().nullable(),
+  layer_id: z.string().nullable().catch(null),
+  subtitle: z.string().catch(""),
+  image_url: z.string().nullable().catch(null),
+  media_url: z.string().nullable().catch(null),
+  options: z.array(ExamOptionSchema),
+  translation: z.string(),
+  analysis: z.string(),
+  analysis_document: z.record(z.string(), z.unknown()).catch({}),
+  review_note: z.string(),
+  reviewed_by: z.int().nullable(),
+  reviewed_at: z.string().nullable(),
+  answer_version: z.int(),
+  revisions: z.array(ExamQuestionRevisionSchema).catch([]),
+}).transform((detail) => ({ ...detail, ...examCategoryFromType(detail.question_type) }));
+
+export type ExamQuestionDetail = z.infer<typeof ExamQuestionDetailSchema>;
+
+export const ExamQuestionUpdateSchema = z.object({
+  correct_option_id: z.int(),
+  answer_status: z.string(),
+  analysis_status: z.string(),
+  translation: z.string().default(""),
+  analysis: z.string().default(""),
+  analysis_document: z.record(z.string(), z.unknown()).default({}),
+  review_note: z.string().default(""),
+});
+
+export type ExamQuestionUpdate = z.infer<typeof ExamQuestionUpdateSchema>;
