@@ -100,6 +100,30 @@ const ANALYSIS_MODULES = {
   ],
 };
 
+function RichTextArea({
+  label,
+  value,
+  onChange,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  const { token } = theme.useToken();
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: token.marginXXS }}>
+      <Text strong style={{ fontSize: token.fontSizeSM }}>
+        {label}
+      </Text>
+      <div className={`review-quill ${className ?? ""}`}>
+        <ReactQuill theme="snow" value={value} modules={ANALYSIS_MODULES} onChange={onChange} />
+      </div>
+    </label>
+  );
+}
+
 export function LayerWorkbench({
   style,
   layerGroup,
@@ -207,10 +231,10 @@ export function LayerWorkbench({
                 </div>
               ) : null}
               {sharedTranslation != null ? (
-                <LabeledArea
+                <RichTextArea
                   label={`共享译文（影响第 ${group.tiles.map((tile) => tile.displayNumber).join("、")} 题）`}
                   value={drafts[sharedTranslation]?.translation ?? ""}
-                  rows={3}
+                  className="translation-quill"
                   onChange={(value) => {
                     for (const tile of group.tiles) {
                       onDraftChange(tile.id, (prev) => ({ ...prev, translation: value }));
@@ -339,6 +363,22 @@ export function LayerWorkbench({
               {detail.media_url ? (
                 <audio controls preload="none" src={detail.media_url} style={{ width: "100%", marginTop: token.marginSM }} />
               ) : null}
+              {detail.category === "listening" && detail.subtitle ? (
+                <div
+                  style={{
+                    marginTop: token.marginMD,
+                    padding: token.paddingMD,
+                    borderRadius: token.borderRadiusLG,
+                    background: token.colorFillAlter,
+                    lineHeight: 1.8,
+                  }}
+                >
+                  <Text strong style={{ display: "block", marginBottom: token.marginSM }}>
+                    听力原文
+                  </Text>
+                  <HtmlBlock html={detail.subtitle} />
+                </div>
+              ) : null}
               {detail.image_url ? (
                 <img src={detail.image_url} alt="" style={{ ...imageStyle, marginTop: token.marginSM }} />
               ) : null}
@@ -369,10 +409,10 @@ export function LayerWorkbench({
 
               <Flex vertical gap={token.marginMD} style={{ marginTop: token.marginMD }}>
                 {hideTranslation ? null : (
-                  <LabeledArea
+                  <RichTextArea
                     label="题目翻译"
                     value={draft.translation}
-                    rows={3}
+                    className="translation-quill"
                     onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, translation: value }))}
                   />
                 )}
@@ -380,7 +420,7 @@ export function LayerWorkbench({
                   <Text strong style={{ fontSize: token.fontSizeSM }}>
                     解析正文
                   </Text>
-                  <div className="analysis-quill">
+                  <div className="review-quill analysis-quill">
                     <ReactQuill
                       theme="snow"
                       value={draft.analysis}

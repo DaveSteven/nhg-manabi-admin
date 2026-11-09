@@ -169,9 +169,6 @@ function PaperRevisionPage() {
         setWorkbench(null);
       }
       void navigate({ search: { questionId: id } });
-      requestAnimationFrame(() => {
-        document.getElementById(`workbench-card-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
     },
     [items, dirtyCount, selectedLayerId, navigate],
   );
@@ -183,11 +180,6 @@ function PaperRevisionPage() {
       const nextIndex = currentIndex + offset;
       if (nextIndex < 0 || nextIndex >= items.length) return;
       selectQuestion(items[nextIndex].id);
-      requestAnimationFrame(() => {
-        document
-          .getElementById(`workbench-card-${items[nextIndex].id}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
     },
     [currentIndex, items, selectQuestion],
   );

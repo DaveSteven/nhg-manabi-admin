@@ -43,18 +43,23 @@
   background: transparent;
 }
 
-/* 真题校正 · 解析正文富文本编辑器（Quill Snow） */
-.analysis-quill .ql-toolbar {
+/* 真题校正 · 富文本编辑器（Quill Snow） */
+.review-quill .ql-toolbar {
   border-radius: 6px 6px 0 0;
 }
 
-.analysis-quill .ql-container {
+.review-quill .ql-container {
   border-radius: 0 0 6px 6px;
   font: inherit;
 }
 
 .analysis-quill .ql-editor {
   min-height: 180px;
+  font-size: 14px;
+}
+
+.translation-quill .ql-editor {
+  min-height: 110px;
   font-size: 14px;
 }
 
