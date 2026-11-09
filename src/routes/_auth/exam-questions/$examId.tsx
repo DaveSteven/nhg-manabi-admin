@@ -213,6 +213,23 @@ function PaperRevisionPage() {
     }
   };
 
+  const nextQuestionId = useMemo(() => {
+    if (items.length === 0) return null;
+    const start = Math.max(currentIndex, -1);
+    for (let offset = 1; offset <= items.length; offset += 1) {
+      const candidate = items[(start + offset) % items.length];
+      if (candidate.id !== selectedId && questionReviewStatus(candidate) !== "done") return candidate.id;
+    }
+    const immediateNext = items[currentIndex + 1];
+    return immediateNext?.id ?? null;
+  }, [currentIndex, items, selectedId]);
+
+  const saveAndGoNext = useCallback(async () => {
+    const result = await saveGroupMutation.mutateAsync();
+    if (!result || result.failed.length > 0 || nextQuestionId == null) return;
+    void navigate({ search: { questionId: nextQuestionId } });
+  }, [navigate, nextQuestionId, saveGroupMutation]);
+
   const handleDraftChange = useCallback(
     (id: number, update: (prev: ExamQuestionUpdate) => ExamQuestionUpdate) => {
       setWorkbench((wb) => (wb ? { ...wb, drafts: { ...wb.drafts, [id]: update(wb.drafts[id]) } } : wb));
@@ -329,6 +346,12 @@ function PaperRevisionPage() {
             selectedId={selectedId}
             onDraftChange={handleDraftChange}
             onSaveGroup={() => saveGroupMutation.mutate()}
+            onSaveAndNext={() => void saveAndGoNext()}
+            onPrevious={() => goToNeighbor(-1)}
+            onNext={() => goToNeighbor(1)}
+            hasPrevious={currentIndex > 0}
+            hasNext={currentIndex >= 0 && currentIndex < items.length - 1}
+            hasNextPending={nextQuestionId != null}
             saving={saveGroupMutation.isPending}
             dirtyCount={dirtyCount}
           />

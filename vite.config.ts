@@ -13,11 +13,7 @@ export default defineConfig({
   server: {
     /** 5173 clashes with nhg-manabi-web's dev server; use 5180. */
     port: 5180,
-    /**
-     * Same-origin `/api` proxy to the real backend (nhg-manabi-api) in dev.
-     * Avoids CORS entirely and keeps `API_BASE_URL` empty; MSW still
-     * intercepts matching paths when mocking is enabled.
-     */
+    /** Same-origin `/api` proxy to the real backend (nhg-manabi-api) in dev. */
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8000",

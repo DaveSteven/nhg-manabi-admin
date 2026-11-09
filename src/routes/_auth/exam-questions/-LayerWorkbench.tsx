@@ -1,6 +1,6 @@
 import { Button, Collapse, Flex, Input, Radio, Select, Tag, Timeline, Typography, theme } from "antd";
 import type { CSSProperties } from "react";
-import { Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import type { ExamQuestionDetail, ExamQuestionUpdate } from "@/api/examQuestion";
@@ -23,6 +23,12 @@ interface LayerWorkbenchProps {
   selectedId: number | null;
   onDraftChange: (id: number, update: QuestionDraftUpdater) => void;
   onSaveGroup: () => void;
+  onSaveAndNext: () => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  hasPrevious: boolean;
+  hasNext: boolean;
+  hasNextPending: boolean;
   saving: boolean;
   dirtyCount: number;
 }
@@ -104,11 +110,21 @@ export function LayerWorkbench({
   selectedId,
   onDraftChange,
   onSaveGroup,
+  onSaveAndNext,
+  onPrevious,
+  onNext,
+  hasPrevious,
+  hasNext,
+  hasNextPending,
   saving,
   dirtyCount,
 }: LayerWorkbenchProps) {
   const { token } = theme.useToken();
   const detailById = new Map(details.map((detail) => [detail.id, detail]));
+  const activePassageGroup = layerGroup?.passageGroups.find((group) =>
+    group.tiles.some((tile) => tile.id === selectedId),
+  );
+  const activeTile = activePassageGroup?.tiles.find((tile) => tile.id === selectedId);
   /** 与学生端 .exam-image 相同的尺寸约束。 */
   const imageStyle: CSSProperties = {
     width: "min(100%, 680px)",
@@ -161,8 +177,8 @@ export function LayerWorkbench({
         />
       ) : null}
 
-      <Flex vertical gap={token.marginLG}>
-        {layerGroup?.passageGroups.map((group, groupIndex) => {
+      <Flex vertical gap={token.marginLG} style={{ paddingBottom: 72 }}>
+        {activePassageGroup ? [activePassageGroup].map((group, groupIndex) => {
           // 原始翻译完全一致时视为共享译文（長文型的文章翻译会被导入复制到每道小题）：
           // 整组只显示一个输入框，编辑同步写入组内所有小题。
           const baselineTranslations = group.tiles.map((tile) => baselines[tile.id]?.translation ?? "");
@@ -174,10 +190,25 @@ export function LayerWorkbench({
 
           return (
             <Flex key={`${groupIndex}-${group.tiles[0]?.id}`} vertical gap={token.marginMD}>
-              {group.passage ? <HtmlBlock html={group.passage} /> : null}
+              {group.passage ? (
+                <div
+                  style={{
+                    padding: token.paddingMD,
+                    borderRadius: token.borderRadiusLG,
+                    background: token.colorFillAlter,
+                    maxHeight: 320,
+                    overflowY: "auto",
+                  }}
+                >
+                  <Text strong style={{ display: "block", marginBottom: token.marginSM }}>
+                    题目原文
+                  </Text>
+                  <HtmlBlock html={group.passage} />
+                </div>
+              ) : null}
               {sharedTranslation != null ? (
                 <LabeledArea
-                  label="题目翻译（整组共享，同步保存到组内所有小题）"
+                  label={`共享译文（影响第 ${group.tiles.map((tile) => tile.displayNumber).join("、")} 题）`}
                   value={drafts[sharedTranslation]?.translation ?? ""}
                   rows={3}
                   onChange={(value) => {
@@ -187,10 +218,51 @@ export function LayerWorkbench({
                   }}
                 />
               ) : null}
-              {group.tiles.map((tile) => renderCard(tile, sharedTranslation != null))}
+              {activeTile ? renderCard(activeTile, sharedTranslation != null) : null}
             </Flex>
           );
-        })}
+        }) : null}
+      </Flex>
+
+      <Flex
+        justify="space-between"
+        align="center"
+        gap={token.marginSM}
+        wrap="wrap"
+        style={{
+          position: "sticky",
+          bottom: 0,
+          zIndex: 2,
+          margin: `0 -${token.paddingLG}px -${token.paddingLG}px`,
+          padding: `${token.paddingSM}px ${token.paddingLG}px`,
+          borderTop: `1px solid ${token.colorBorderSecondary}`,
+          background: token.colorBgContainer,
+          boxShadow: "0 -6px 18px rgba(0, 0, 0, 0.06)",
+        }}
+      >
+        <Flex gap={token.marginXS}>
+          <Button icon={<ArrowLeft size={token.fontSize} />} disabled={!hasPrevious || saving} onClick={onPrevious}>
+            上一题
+          </Button>
+          <Button disabled={!hasNext || saving} onClick={onNext}>
+            下一题
+          </Button>
+        </Flex>
+        <Flex gap={token.marginXS} align="center">
+          {dirtyCount > 0 ? <Text type="warning">{dirtyCount} 题未保存</Text> : <Text type="success">已保存</Text>}
+          <Button icon={<Save size={token.fontSize} />} disabled={dirtyCount === 0} loading={saving} onClick={onSaveGroup}>
+            保存
+          </Button>
+          <Button
+            type="primary"
+            icon={<ArrowRight size={token.fontSize} />}
+            disabled={dirtyCount === 0 || !hasNextPending}
+            loading={saving}
+            onClick={onSaveAndNext}
+          >
+            保存并前往下一道待处理
+          </Button>
+        </Flex>
       </Flex>
     </Flex>
   );

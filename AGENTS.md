@@ -77,7 +77,6 @@ These commands map to their corresponding tools. For example, `vp dev --port 300
 This repository also uses scoped AI instruction files in `.github/instructions/`.
 
 - `frontend.instructions.md` for UI/routes/components/style work
-- `testing.instructions.md` for Playwright/MSW/test updates
 - `api.instructions.md` for API/schema/handler changes
 - `refactor.instructions.md` for behavior-preserving cleanup
 

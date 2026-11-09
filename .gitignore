@@ -30,7 +30,3 @@ src/locales/*/messages.js
 .pnpm-store
 .cursor
 .tanstack
-
-# Playwright
-playwright-report
-test-results

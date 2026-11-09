@@ -1,20 +1,18 @@
 ---
-applyTo: "src/api/**/*.ts,src/utils/http.ts,src/mocks/handlers/**/*.ts,src/mocks/createHandler.ts"
-description: "Use when editing API clients, schemas, HTTP behavior, response types, or MSW endpoint handlers. Keywords: api, http, schema, zod, handler, endpoint, auth, users."
+applyTo: "src/api/**/*.ts,src/utils/http.ts"
+description: "Use when editing API clients, schemas, HTTP behavior, response types, or endpoints. Keywords: api, http, schema, zod, endpoint, auth, users."
 ---
 
 # API Instructions
 
 ## Purpose
 
-Maintain strict API contracts and consistent server/client mock behavior.
+Maintain strict API contracts between the admin client and backend.
 
 ## Do
 
 - Keep request/response shapes schema-driven and type-safe.
 - Reuse endpoint constants and shared response helpers.
-- Keep handler response envelope consistent (`code`, `data`, `message`).
-- Ensure mock handlers reflect real API behavior and error semantics.
 - Keep naming stable for endpoint keys and mutation/query keys.
 
 ## Do Not
