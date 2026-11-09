@@ -42,3 +42,35 @@
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* 真题校正 · 解析正文富文本编辑器（Quill Snow） */
+.analysis-quill .ql-toolbar {
+  border-radius: 6px 6px 0 0;
+}
+
+.analysis-quill .ql-container {
+  border-radius: 0 0 6px 6px;
+  font: inherit;
+}
+
+.analysis-quill .ql-editor {
+  min-height: 180px;
+  font-size: 14px;
+}
+
+/* 学生端预览：解析正文按 HTML 渲染 */
+.analysis-preview p {
+  margin: 0 0 8px;
+}
+
+.analysis-preview ol,
+.analysis-preview ul {
+  margin: 0 0 8px;
+  padding-inline-start: 24px;
+}
+
+.analysis-preview blockquote {
+  margin: 0 0 8px;
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid rgba(0, 0, 0, 0.15);
+}

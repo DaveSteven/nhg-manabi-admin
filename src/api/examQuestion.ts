@@ -18,6 +18,8 @@ export type ExamQuestionListParams = {
   category?: string;
   answer_status?: string;
   analysis_status?: string;
+  exam_year?: number;
+  exam_month?: number;
   page?: number;
   page_size?: number;
 };

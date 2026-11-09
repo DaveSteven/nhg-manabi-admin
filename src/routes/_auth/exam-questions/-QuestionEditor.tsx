@@ -1,9 +1,10 @@
 import { Button, Flex, Input, Radio, Select, Timeline, Typography, theme } from "antd";
 import type { CSSProperties } from "react";
 import { History, Save } from "lucide-react";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import type { ExamQuestionDetail, ExamQuestionUpdate } from "@/api/examQuestion";
 import { ANALYSIS_STATUSES, ANSWER_STATUSES } from "@/api/schemas";
-import { plainText } from "./-QuestionList";
 
 const { Text, Title } = Typography;
 
@@ -11,7 +12,8 @@ interface QuestionEditorProps {
   style?: CSSProperties;
   detail: ExamQuestionDetail;
   draft: ExamQuestionUpdate;
-  onDraftChange: (draft: ExamQuestionUpdate) => void;
+  /** Functional update so async editor events (e.g. Quill's mount-time onChange) can never write stale draft fields. */
+  onDraftChange: (update: (prev: ExamQuestionUpdate) => ExamQuestionUpdate) => void;
   onSave: () => void;
   saving: boolean;
 }
@@ -21,6 +23,29 @@ function documentField(document: Record<string, unknown>, key: string): string {
   if (typeof value === "string") return value;
   if (value == null) return "";
   return JSON.stringify(value);
+}
+
+/** Same cleanup as the student app: drop MOJi-specific wrapper tags. */
+function cleanHtml(html: string): string {
+  return String(html ?? "").replace(/<\/?MOJiTest_URL>/g, "");
+}
+
+/** Inline variant: collapse newlines so option text stays on one line. */
+function cleanInlineHtml(html: string): string {
+  return cleanHtml(html)
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]*\n[ \t]*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Renders question/option markup (underline, ruby, …) exactly like the student app. */
+function HtmlInline({ html }: { html: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: cleanInlineHtml(html) }} />;
+}
+
+function HtmlBlock({ html, style }: { html: string; style?: CSSProperties }) {
+  return <div style={style} dangerouslySetInnerHTML={{ __html: cleanHtml(html) }} />;
 }
 
 function Section({
@@ -38,6 +63,38 @@ function Section({
       </Title>
       {children}
     </section>
+  );
+}
+
+/** Toolbar for 解析正文 — the formats the student renderer supports. Kept outside the component so the toolbar doesn't reset on re-render. */
+const ANALYSIS_MODULES = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["blockquote", "link", "clean"],
+  ],
+};
+
+function LabeledRichText({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { token } = theme.useToken();
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: token.marginXXS }}>
+      <Text strong style={{ fontSize: token.fontSizeSM }}>
+        {label}
+      </Text>
+      <div className="analysis-quill">
+        <ReactQuill theme="snow" value={value} modules={ANALYSIS_MODULES} onChange={onChange} />
+      </div>
+    </label>
   );
 }
 
@@ -82,18 +139,18 @@ export function QuestionEditor({
   const document = draft.analysis_document;
 
   const updateDocument = (key: string, value: string) =>
-    onDraftChange({
-      ...draft,
-      analysis_document: { ...draft.analysis_document, [key]: value },
-    });
+    onDraftChange((prev) => ({
+      ...prev,
+      analysis_document: { ...prev.analysis_document, [key]: value },
+    }));
 
-  const previewEntries: Array<[string, string]> = [
-    ["题目翻译", draft.translation],
-    ["解析摘要", documentField(document, "summary")],
-    ["答案解析", draft.analysis],
-    ["原文依据", documentField(document, "evidence")],
-    ["知识点", documentField(document, "knowledge_points")],
-    ["解题提示", documentField(document, "tips")],
+  const previewEntries: Array<[string, string, boolean]> = [
+    ["题目翻译", draft.translation, false],
+    ["解析摘要", documentField(document, "summary"), false],
+    ["答案解析", draft.analysis, true],
+    ["原文依据", documentField(document, "evidence"), false],
+    ["知识点", documentField(document, "knowledge_points"), false],
+    ["解题提示", documentField(document, "tips"), false],
   ];
   const previewItems = previewEntries.filter(([, value]) => value.trim().length > 0);
 
@@ -131,29 +188,31 @@ export function QuestionEditor({
       </Flex>
 
       <Section title="原题">
-        {detail.passage ? <p style={{ marginTop: 0 }}>{plainText(detail.passage)}</p> : null}
-        <p>{plainText(detail.title)}</p>
-        <Radio.Group
-          value={draft.correct_option_id}
-          onChange={(event) => onDraftChange({ ...draft, correct_option_id: event.target.value })}
-          style={{ display: "flex", flexDirection: "column", gap: token.marginSM }}
-        >
-          {detail.options.map((option) => {
-            const isCorrect = draft.correct_option_id === option.id;
-            return (
-              <Radio key={option.id} value={option.id} style={{ alignItems: "flex-start" }}>
-                <Flex gap={token.marginXS} align="baseline">
-                  <Text type={isCorrect ? "success" : undefined} strong={isCorrect}>
-                    {option.source_order}.
-                  </Text>
-                  <Text strong={isCorrect} style={isCorrect ? { color: token.colorSuccess } : undefined}>
-                    {plainText(option.text)}
-                  </Text>
-                </Flex>
-              </Radio>
-            );
-          })}
-        </Radio.Group>
+        <Flex vertical gap={token.marginLG}>
+          {detail.passage ? <HtmlBlock html={detail.passage} /> : null}
+          <HtmlBlock html={detail.title} />
+          <Radio.Group
+            value={draft.correct_option_id}
+            onChange={(event) => onDraftChange((prev) => ({ ...prev, correct_option_id: event.target.value }))}
+            style={{ display: "flex", flexDirection: "column", gap: token.marginMD }}
+          >
+            {detail.options.map((option) => {
+              const isCorrect = draft.correct_option_id === option.id;
+              return (
+                <Radio key={option.id} value={option.id} style={{ alignItems: "flex-start" }}>
+                  <Flex gap={token.marginXS} align="baseline">
+                    <Text type={isCorrect ? "success" : undefined} strong={isCorrect}>
+                      {option.source_order}.
+                    </Text>
+                    <Text strong={isCorrect} style={isCorrect ? { color: token.colorSuccess } : undefined}>
+                      <HtmlInline html={option.text} />
+                    </Text>
+                  </Flex>
+                </Radio>
+              );
+            })}
+          </Radio.Group>
+        </Flex>
       </Section>
 
       <Section title="校正内容">
@@ -165,7 +224,7 @@ export function QuestionEditor({
               </Text>
               <Select
                 value={draft.answer_status}
-                onChange={(value) => onDraftChange({ ...draft, answer_status: value })}
+                onChange={(value) => onDraftChange((prev) => ({ ...prev, answer_status: value }))}
                 options={ANSWER_STATUSES.map((item) => ({ value: item.value, label: item.label }))}
               />
             </label>
@@ -175,7 +234,7 @@ export function QuestionEditor({
               </Text>
               <Select
                 value={draft.analysis_status}
-                onChange={(value) => onDraftChange({ ...draft, analysis_status: value })}
+                onChange={(value) => onDraftChange((prev) => ({ ...prev, analysis_status: value }))}
                 options={ANALYSIS_STATUSES.map((item) => ({ value: item.value, label: item.label }))}
               />
             </label>
@@ -185,13 +244,12 @@ export function QuestionEditor({
             label="题目翻译"
             value={draft.translation}
             rows={4}
-            onChange={(value) => onDraftChange({ ...draft, translation: value })}
+            onChange={(value) => onDraftChange((prev) => ({ ...prev, translation: value }))}
           />
-          <LabeledArea
+          <LabeledRichText
             label="解析正文"
             value={draft.analysis}
-            rows={8}
-            onChange={(value) => onDraftChange({ ...draft, analysis: value })}
+            onChange={(value) => onDraftChange((prev) => ({ ...prev, analysis: value }))}
           />
 
           <Flex gap={token.marginMD} wrap="wrap">
@@ -234,7 +292,7 @@ export function QuestionEditor({
             value={draft.review_note}
             rows={3}
             placeholder="记录答案来源、修改原因或存疑点；学生不可见"
-            onChange={(value) => onDraftChange({ ...draft, review_note: value })}
+            onChange={(value) => onDraftChange((prev) => ({ ...prev, review_note: value }))}
           />
         </Flex>
       </Section>
@@ -244,12 +302,16 @@ export function QuestionEditor({
           <Text type="secondary">暂无学生端可见内容。</Text>
         ) : (
           <Flex vertical gap={token.marginSM}>
-            {previewItems.map(([label, value]) => (
+            {previewItems.map(([label, value, isHtml]) => (
               <div key={label}>
                 <Text strong style={{ fontSize: token.fontSizeSM }}>
                   {label}
                 </Text>
-                <p style={{ margin: `${token.marginXXS}px 0 0` }}>{value}</p>
+                {isHtml ? (
+                  <div className="analysis-preview" style={{ marginTop: token.marginXXS }} dangerouslySetInnerHTML={{ __html: value }} />
+                ) : (
+                  <p style={{ margin: `${token.marginXXS}px 0 0` }}>{value}</p>
+                )}
               </div>
             ))}
           </Flex>

@@ -14,7 +14,26 @@ export interface QuestionFiltersValue {
   category: string;
   answer_status: string;
   analysis_status: string;
+  exam_year: string;
+  exam_month: string;
 }
+
+/** 年份下拉：当前年份往前推到 2010（JLPT 数据大致从这一年起）。 */
+const EXAM_YEAR_MIN = 2010;
+
+function examYearOptions(): Array<{ value: string; label: string }> {
+  const currentYear = new Date().getFullYear();
+  const years: Array<{ value: string; label: string }> = [];
+  for (let year = currentYear; year >= EXAM_YEAR_MIN; year -= 1) {
+    years.push({ value: String(year), label: `${year}年` });
+  }
+  return years;
+}
+
+const EXAM_MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index + 1),
+  label: `${index + 1}月`,
+}));
 
 interface QuestionFiltersProps {
   q: string;
@@ -22,6 +41,8 @@ interface QuestionFiltersProps {
   category: string;
   answerStatus: string;
   analysisStatus: string;
+  examYear: string;
+  examMonth: string;
   onSearch: (patch: Partial<QuestionFiltersValue>) => void;
 }
 
@@ -31,6 +52,8 @@ export function QuestionFilters({
   category,
   answerStatus,
   analysisStatus,
+  examYear,
+  examMonth,
   onSearch,
 }: QuestionFiltersProps) {
   const { token } = theme.useToken();
@@ -93,6 +116,20 @@ export function QuestionFilters({
           ...ANALYSIS_STATUSES.map((item) => ({ value: item.value, label: item.label })),
         ]}
         style={selectStyle}
+      />
+      <Select
+        aria-label="考试年份"
+        value={examYear}
+        onChange={(value) => onSearch({ exam_year: value })}
+        options={[{ value: "", label: "全部年份" }, ...examYearOptions()]}
+        style={selectStyle}
+      />
+      <Select
+        aria-label="考试月份"
+        value={examMonth}
+        onChange={(value) => onSearch({ exam_month: value })}
+        options={[{ value: "", label: "全部月份" }, ...EXAM_MONTH_OPTIONS]}
+        style={{ minWidth: 100 }}
       />
       <Button type="primary" htmlType="submit">
         筛选

@@ -20,10 +20,18 @@ const ExamQuestionSearchSchema = z.object({
   category: z.string().catch(""),
   answer_status: z.string().catch(""),
   analysis_status: z.string().catch(""),
+  exam_year: z.string().catch(""),
+  exam_month: z.string().catch(""),
   questionId: z.number().int().positive().nullable().catch(null),
   page: z.number().int().positive().catch(1),
   pageSize: z.number().int().positive().catch(30),
 });
+
+/** "" → undefined so the query param is omitted entirely. */
+function searchNumber(value: string): number | undefined {
+  const parsed = Number(value);
+  return value !== "" && Number.isInteger(parsed) ? parsed : undefined;
+}
 
 export const Route = createFileRoute("/_auth/exam-questions/")({
   validateSearch: (search) => ExamQuestionSearchSchema.parse(search),
@@ -50,6 +58,8 @@ function ExamQuestionsPage() {
       search.category,
       search.answer_status,
       search.analysis_status,
+      search.exam_year,
+      search.exam_month,
       search.page,
       search.pageSize,
     ],
@@ -60,6 +70,8 @@ function ExamQuestionsPage() {
         category: search.category || undefined,
         answer_status: search.answer_status || undefined,
         analysis_status: search.analysis_status || undefined,
+        exam_year: searchNumber(search.exam_year),
+        exam_month: searchNumber(search.exam_month),
         page: search.page,
         page_size: search.pageSize,
       }),
@@ -76,7 +88,8 @@ function ExamQuestionsPage() {
 
   /** Re-seed the draft whenever a different question's detail arrives. */
   useEffect(() => {
-    if (!detail || draftForId === detail.id) return;
+    /** Skip stale arrivals: the URL may already point at another question. */
+    if (!detail || detail.id !== selectedId || draftForId === detail.id) return;
     setDraftForId(detail.id);
     setDraft(
       ExamQuestionUpdateSchema.parse({
@@ -132,6 +145,8 @@ function ExamQuestionsPage() {
         category={search.category}
         answerStatus={search.answer_status}
         analysisStatus={search.analysis_status}
+        examYear={search.exam_year}
+        examMonth={search.exam_month}
         onSearch={(patch) => void navigate({ search: { ...search, ...patch, page: 1 } })}
       />
 
@@ -180,12 +195,13 @@ function ExamQuestionsPage() {
               题目详情加载失败：{detailQuery.error instanceof Error ? detailQuery.error.message : "未知错误"}
             </Typography.Text>
           </Flex>
-        ) : detail && draft ? (
+        ) : detail && draft && draftForId === detail.id ? (
           <QuestionEditor
+            key={detail.id}
             style={{ flex: 1, minWidth: 0 }}
             detail={detail}
             draft={draft}
-            onDraftChange={setDraft}
+            onDraftChange={(update) => setDraft((prev) => (prev ? update(prev) : prev))}
             onSave={() => saveMutation.mutate(draft)}
             saving={saveMutation.isPending}
           />

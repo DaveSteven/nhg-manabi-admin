@@ -286,7 +286,8 @@ export const ExamQuestionDetailSchema = ExamQuestionDetailBaseSchema.extend({
 export type ExamQuestionDetail = z.infer<typeof ExamQuestionDetailSchema>;
 
 export const ExamQuestionUpdateSchema = z.object({
-  correct_option_id: z.int(),
+  /** Nullable: questions without a marked correct option return null from the API. */
+  correct_option_id: z.int().nullable(),
   answer_status: z.string(),
   analysis_status: z.string(),
   translation: z.string().default(""),
