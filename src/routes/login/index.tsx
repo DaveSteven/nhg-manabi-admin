@@ -11,7 +11,6 @@ import { fetchSessionAndApplyToStore } from "@/utils/session";
 import type { LoginRequest } from "@/api/schemas";
 import { APP_BRAND_NAME, APP_FAVICON_SRC } from "@/utils/constants";
 import { Theme } from "@/components/Icon";
-import { AppFooter } from "@/components/Layout/AppFooter";
 import { Aurora } from "@/components/Aurora";
 import "./index.css";
 
@@ -139,7 +138,12 @@ function LoginPage() {
                 label={<span style={{ fontWeight: 500 }}>Username</span>}
                 rules={[{ required: true, message: "Please enter username" }]}
               >
-                <Input id="login-username" aria-label="Username" placeholder="Username" size="large" />
+                <Input
+                  id="login-username"
+                  aria-label="Username"
+                  placeholder="Username"
+                  size="large"
+                />
               </Form.Item>
 
               <Form.Item
@@ -207,7 +211,6 @@ function LoginPage() {
               />
             </Space>
           </Flex>
-          <AppFooter />
         </Flex>
       </Flex>
     </Flex>
