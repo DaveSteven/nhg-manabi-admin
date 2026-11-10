@@ -10,7 +10,6 @@ export const SHARED_DESIGN_TOKENS = {
   fontFamily:
     "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
 
-  // 与 web 端「樱与墨」色板对齐（见 docs/ui-redesign-plan.md §六）
   borderRadius: 8,
   borderRadiusSM: 6,
   borderRadiusLG: 12,
@@ -75,11 +74,7 @@ export const MENU_DARK = {
  */
 export function buildLightThemeConfig(): ConfigProviderProps {
   const lightSeed: ThemeConfig["token"] = {
-    colorPrimary: "#b94968",
-    colorSuccess: "#2f7d4f",
-    colorError: "#c73e3a",
-    colorWarning: "#b98a1e",
-    colorBgLayout: "#faf7f2",
+    colorBgLayout: "#ffffff",
     ...SHARED_DESIGN_TOKENS,
   };
 
@@ -104,10 +99,6 @@ export function buildLightThemeConfig(): ConfigProviderProps {
  */
 export function buildDarkThemeConfig(): ConfigProviderProps {
   const darkSeed: ThemeConfig["token"] = {
-    colorPrimary: "#e08aa3",
-    colorSuccess: "#6fbf8e",
-    colorError: "#e07a76",
-    colorWarning: "#d9b45e",
     ...SHARED_DESIGN_TOKENS,
   };
 
