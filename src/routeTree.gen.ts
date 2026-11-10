@@ -18,6 +18,7 @@ import { Route as AuthDashboardIndexRouteImport } from './routes/_auth/dashboard
 import { Route as AuthExamQuestionsIndexRouteImport } from './routes/_auth/exam-questions/index'
 import { Route as AuthExamQuestionsExamIdRouteImport } from './routes/_auth/exam-questions/$examId'
 import { Route as AuthUsersIndexRouteImport } from './routes/_auth/users/index'
+import { Route as AuthUsersUserIdRouteImport } from './routes/_auth/users/$userId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,12 +64,18 @@ const AuthUsersIndexRoute = AuthUsersIndexRouteImport.update({
   path: '/users/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthUsersUserIdRoute = AuthUsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404/': typeof R404IndexRoute
   '/login/': typeof LoginIndexRoute
   '/exam-questions/$examId': typeof AuthExamQuestionsExamIdRoute
+  '/users/$userId': typeof AuthUsersUserIdRoute
   '/403/': typeof Auth403IndexRoute
   '/dashboard/': typeof AuthDashboardIndexRoute
   '/exam-questions/': typeof AuthExamQuestionsIndexRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/404': typeof R404IndexRoute
   '/login': typeof LoginIndexRoute
   '/exam-questions/$examId': typeof AuthExamQuestionsExamIdRoute
+  '/users/$userId': typeof AuthUsersUserIdRoute
   '/403': typeof Auth403IndexRoute
   '/dashboard': typeof AuthDashboardIndexRoute
   '/exam-questions': typeof AuthExamQuestionsIndexRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/404/': typeof R404IndexRoute
   '/login/': typeof LoginIndexRoute
   '/_auth/exam-questions/$examId': typeof AuthExamQuestionsExamIdRoute
+  '/_auth/users/$userId': typeof AuthUsersUserIdRoute
   '/_auth/403/': typeof Auth403IndexRoute
   '/_auth/dashboard/': typeof AuthDashboardIndexRoute
   '/_auth/exam-questions/': typeof AuthExamQuestionsIndexRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/404/'
     | '/login/'
     | '/exam-questions/$examId'
+    | '/users/$userId'
     | '/403/'
     | '/dashboard/'
     | '/exam-questions/'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/login'
     | '/exam-questions/$examId'
+    | '/users/$userId'
     | '/403'
     | '/dashboard'
     | '/exam-questions'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/404/'
     | '/login/'
     | '/_auth/exam-questions/$examId'
+    | '/_auth/users/$userId'
     | '/_auth/403/'
     | '/_auth/dashboard/'
     | '/_auth/exam-questions/'
@@ -202,11 +214,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUsersIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/users/$userId': {
+      id: '/_auth/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AuthUsersUserIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
 interface AuthRouteChildren {
   AuthExamQuestionsExamIdRoute: typeof AuthExamQuestionsExamIdRoute
+  AuthUsersUserIdRoute: typeof AuthUsersUserIdRoute
   Auth403IndexRoute: typeof Auth403IndexRoute
   AuthDashboardIndexRoute: typeof AuthDashboardIndexRoute
   AuthExamQuestionsIndexRoute: typeof AuthExamQuestionsIndexRoute
@@ -215,6 +235,7 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthExamQuestionsExamIdRoute: AuthExamQuestionsExamIdRoute,
+  AuthUsersUserIdRoute: AuthUsersUserIdRoute,
   Auth403IndexRoute: Auth403IndexRoute,
   AuthDashboardIndexRoute: AuthDashboardIndexRoute,
   AuthExamQuestionsIndexRoute: AuthExamQuestionsIndexRoute,

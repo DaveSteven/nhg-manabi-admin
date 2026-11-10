@@ -13,10 +13,10 @@ type UseResourceCRUDOptions<TListData, TCreateValues, TUpdateValues> = {
   select: (raw: unknown) => TListData;
   createFn: (values: TCreateValues) => Promise<unknown>;
   updateFn: (values: TUpdateValues) => Promise<unknown>;
-  deleteFn: (id: string) => Promise<unknown>;
+  deleteFn: (id: string | number) => Promise<unknown>;
   createLifecycle?: MutationLifecycle<TCreateValues>;
   updateLifecycle?: MutationLifecycle<TUpdateValues>;
-  deleteLifecycle?: MutationLifecycle<string>;
+  deleteLifecycle?: MutationLifecycle<string | number>;
 };
 
 export function useResourceCRUD<TListData, TCreateValues, TUpdateValues>(

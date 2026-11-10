@@ -1,19 +1,20 @@
 import { z } from "zod/v4";
 
+/**
+ * Real backend (`nhg-manabi-api`) admin user (`AdminUserOut`).
+ * Field names stay snake_case to match the API contract verbatim.
+ */
 export const UserSchema = z.object({
-  id: z.string(),
+  id: z.int(),
   username: z.string(),
-  avatar: z.string().nullable(),
-  email: z.string().nullable(),
-  roles: z.array(z.string()),
-  permissions: z.array(z.string()),
+  display_name: z.string(),
+  current_level: z.string(),
+  is_admin: z.boolean(),
+  created_at: z.string(),
+  last_active_at: z.string().nullable(),
 });
 
 export type User = z.infer<typeof UserSchema>;
-
-/** GET `/api/auth/user` body (no `permissions`; load via `/api/auth/permissions`). */
-export const AuthUserResponseSchema = UserSchema.omit({ permissions: true });
-export type AuthUserResponse = z.infer<typeof AuthUserResponseSchema>;
 
 export const AuthTokensSchema = z.object({
   accessToken: z.string().min(1),
@@ -108,24 +109,20 @@ export const SearchParamsSchema = z.object({
 
 export type SearchParams = z.infer<typeof SearchParamsSchema>;
 
-/** Ant Design Input submits `""` when empty; treat as null for optional email */
-const createUserEmailSchema = z
-  .union([z.string(), z.null(), z.undefined()])
-  .transform((v) => {
-    if (v == null) return null;
-    const t = String(v).trim();
-    return t === "" ? null : t;
-  })
-  .pipe(z.union([z.string().email(), z.null()]));
+export const EXAM_LEVELS = ["N5", "N4", "N3", "N2", "N1"] as const;
 
+/** `POST /api/admin/users` body. */
 export const CreateUserRequestSchema = z.object({
   username: z.string().min(1),
-  email: createUserEmailSchema,
-  roles: z.array(z.string()).min(1),
+  display_name: z.string().min(1),
+  password: z.string().min(1),
+  current_level: z.enum(EXAM_LEVELS).catch("N5"),
+  is_admin: z.boolean().catch(false),
 });
 
 export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
 
+/** `PUT /api/admin/users/{id}` body — all fields optional. */
 export const UpdateUserRequestSchema = CreateUserRequestSchema.partial();
 
 export type UpdateUserRequest = z.infer<typeof UpdateUserRequestSchema>;
@@ -193,8 +190,6 @@ export const EXAM_CATEGORIES = [
   { value: "reading", label: "读解" },
   { value: "listening", label: "听力" },
 ] as const;
-
-export const EXAM_LEVELS = ["N5", "N4", "N3", "N2", "N1"] as const;
 
 export const ExamOptionSchema = z.object({
   id: z.int(),
@@ -338,3 +333,106 @@ export const ExamQuestionUpdateSchema = z.object({
 });
 
 export type ExamQuestionUpdate = z.infer<typeof ExamQuestionUpdateSchema>;
+
+/*
+ * Learning statistics — 学生端 `/api/stats/*` 与 admin 端
+ * `/api/admin/users/{id}/stats/*` 共用同一份聚合结构，字段保持 snake_case。
+ */
+
+export const StatsStreakSchema = z.object({
+  current: z.int(),
+  longest: z.int(),
+  last_active_date: z.string().nullable(),
+});
+
+export type StatsStreak = z.infer<typeof StatsStreakSchema>;
+
+export const StatsTotalsSchema = z.object({
+  practice_attempts: z.int(),
+  exam_attempts: z.int(),
+  listening_attempts: z.int(),
+  questions_answered: z.int(),
+  questions_correct: z.int(),
+  overall_accuracy: z.number().nullable(),
+});
+
+export type StatsTotals = z.infer<typeof StatsTotalsSchema>;
+
+export const StatsActivityDaySchema = z.object({
+  date: z.string(),
+  answered: z.int(),
+  correct: z.int(),
+});
+
+export type StatsActivityDay = z.infer<typeof StatsActivityDaySchema>;
+
+export const StatsLevelBreakdownSchema = z.object({
+  level: z.string(),
+  correct: z.int(),
+  total: z.int(),
+  accuracy: z.number().nullable(),
+});
+
+export type StatsLevelBreakdown = z.infer<typeof StatsLevelBreakdownSchema>;
+
+export const StatsSubjectBreakdownSchema = z.object({
+  subject: z.string(),
+  label: z.string(),
+  correct: z.int(),
+  total: z.int(),
+  accuracy: z.number().nullable(),
+});
+
+export type StatsSubjectBreakdown = z.infer<typeof StatsSubjectBreakdownSchema>;
+
+export const StatsOverviewSchema = z.object({
+  totals: StatsTotalsSchema,
+  streak: StatsStreakSchema,
+  activity: z.array(StatsActivityDaySchema),
+  breakdown_by_level: z.array(StatsLevelBreakdownSchema),
+  breakdown_by_subject: z.array(StatsSubjectBreakdownSchema),
+});
+
+export type StatsOverview = z.infer<typeof StatsOverviewSchema>;
+
+export const StatsTrendPointSchema = z.object({
+  period: z.string(),
+  answered: z.int(),
+  correct: z.int(),
+  accuracy: z.number().nullable(),
+  attempts: z.int(),
+});
+
+export type StatsTrendPoint = z.infer<typeof StatsTrendPointSchema>;
+
+export const StatsTrendSchema = z.object({
+  points: z.array(StatsTrendPointSchema),
+});
+
+export type StatsTrend = z.infer<typeof StatsTrendSchema>;
+
+/*
+ * Dashboard 全局汇总 — `/api/admin/stats/summary`。
+ */
+
+export const AdminTrendPointSchema = z.object({
+  period: z.string(),
+  count: z.int(),
+});
+
+export type AdminTrendPoint = z.infer<typeof AdminTrendPointSchema>;
+
+export const AdminSummarySchema = z.object({
+  totals: z.object({
+    users: z.int(),
+    admins: z.int(),
+    active_users_7d: z.int(),
+    new_users_7d: z.int(),
+    questions_answered: z.int(),
+    questions_answered_7d: z.int(),
+  }),
+  registration_trend: z.array(AdminTrendPointSchema),
+  activity_trend: z.array(AdminTrendPointSchema),
+});
+
+export type AdminSummary = z.infer<typeof AdminSummarySchema>;

@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Avatar, Button, Space, Form, App, Dropdown, theme, Tag, Flex } from "antd";
+import { Avatar, Button, Form, App, Dropdown, theme, Tag, Flex, Tooltip, Typography } from "antd";
+
+const { Text } = Typography;
 import type { TablePaginationConfig } from "antd/es/table/interface";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { httpClient } from "@/utils/http";
 import { USER_ENDPOINTS } from "@/api/user";
 import { PaginatedResponseSchema, UserSchema, CreateUserRequestSchema } from "@/api/schemas";
-import type { User, CreateUserRequest } from "@/api/schemas";
+import type { User, CreateUserRequest, UpdateUserRequest } from "@/api/schemas";
 import { z } from "zod/v4";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/DataTable";
@@ -68,7 +70,7 @@ function UsersPage() {
   const { data, isLoading, createMutation, updateMutation, deleteMutation } = useResourceCRUD<
     { list: User[]; total: number },
     CreateUserRequest,
-    CreateUserRequest & { id: string }
+    UpdateUserRequest & { id: number }
   >({
     queryKey: [
       "users",
@@ -99,7 +101,7 @@ function UsersPage() {
     createLifecycle: {
       onSuccess: () => {
         message.success({
-          content: "Created successfully",
+          content: "创建成功",
           key: MESSAGE_KEY_USER_CREATE,
         });
         setModalOpen(false);
@@ -107,7 +109,7 @@ function UsersPage() {
       },
       onError: () => {
         message.error({
-          content: "Create failed",
+          content: "创建失败",
           key: MESSAGE_KEY_USER_CREATE,
         });
       },
@@ -122,7 +124,7 @@ function UsersPage() {
       },
       onSuccess: () => {
         message.success({
-          content: "Updated successfully",
+          content: "更新成功",
           key: MESSAGE_KEY_USER_UPDATE,
         });
         setModalOpen(false);
@@ -131,7 +133,7 @@ function UsersPage() {
       },
       onError: () => {
         message.error({
-          content: "Update failed",
+          content: "更新失败",
           key: MESSAGE_KEY_USER_UPDATE,
         });
       },
@@ -139,20 +141,20 @@ function UsersPage() {
     deleteLifecycle: {
       onMutate: () => {
         message.loading({
-          content: "Deleting…",
+          content: "删除中…",
           key: MESSAGE_KEY_USER_DELETE,
           duration: 0,
         });
       },
       onSuccess: () => {
         message.success({
-          content: "Deleted successfully",
+          content: "删除成功",
           key: MESSAGE_KEY_USER_DELETE,
         });
       },
       onError: () => {
         message.error({
-          content: "Delete failed",
+          content: "删除失败",
           key: MESSAGE_KEY_USER_DELETE,
         });
       },
@@ -161,11 +163,11 @@ function UsersPage() {
 
   const confirmDelete = (record: User) => {
     modal.confirm({
-      title: "Are you absolutely sure?",
-      content: "This action cannot be undone. This will permanently delete the user.",
-      okText: "Delete",
+      title: "确认删除该用户？",
+      content: "此操作不可撤销，将永久删除该用户账号。",
+      okText: "删除",
       okType: "danger",
-      cancelText: "Cancel",
+      cancelText: "取消",
       onOk: () => deleteMutation.mutate(record.id),
     });
   };
@@ -177,68 +179,94 @@ function UsersPage() {
       key: "id",
       sorter: true,
       sortOrder: search.sortField === "id" ? search.sortOrder : null,
+      width: 70,
     },
     {
-      title: "Username",
+      title: "用户名",
       dataIndex: "username",
       key: "username",
       sorter: true,
       sortOrder: search.sortField === "username" ? search.sortOrder : null,
-      render: (_: unknown, record: User) => {
-        const src = (record.avatar ?? "").trim() || undefined;
+      render: (_: unknown, record: User) => (
+        <Flex align="center" gap={token.marginSM} style={{ minWidth: 0 }}>
+          <Avatar size={24} shape="circle" style={{ flexShrink: 0 }}>
+            {record.username?.[0]?.toUpperCase()}
+          </Avatar>
+          <Typography.Link
+            ellipsis
+            onClick={() =>
+              void navigate({ to: "/users/$userId", params: { userId: String(record.id) }, search: {} })
+            }
+          >
+            {record.username}
+          </Typography.Link>
+        </Flex>
+      ),
+    },
+    {
+      title: "昵称",
+      dataIndex: "display_name",
+      key: "display_name",
+      sorter: true,
+      sortOrder: search.sortField === "display_name" ? search.sortOrder : null,
+    },
+    {
+      title: "级别",
+      dataIndex: "current_level",
+      key: "current_level",
+      sorter: true,
+      sortOrder: search.sortField === "current_level" ? search.sortOrder : null,
+      width: 90,
+    },
+    {
+      title: "角色",
+      dataIndex: "is_admin",
+      key: "is_admin",
+      sorter: true,
+      sortOrder: search.sortField === "is_admin" ? search.sortOrder : null,
+      width: 90,
+      render: (isAdmin: boolean) =>
+        isAdmin ? (
+          <Tag color="gold" variant="outlined" style={{ borderRadius: 9999 }}>
+            管理员
+          </Tag>
+        ) : (
+          <Tag variant="outlined" style={{ borderRadius: 9999 }}>
+            用户
+          </Tag>
+        ),
+    },
+    {
+      title: "注册时间",
+      dataIndex: "created_at",
+      key: "created_at",
+      sorter: true,
+      sortOrder: search.sortField === "created_at" ? search.sortOrder : null,
+      width: 170,
+      render: (value: string) => new Date(value).toLocaleString("zh-CN", { hour12: false }),
+    },
+    {
+      title: "最近活跃",
+      dataIndex: "last_active_at",
+      key: "last_active_at",
+      sorter: true,
+      sortOrder: search.sortField === "last_active_at" ? search.sortOrder : null,
+      width: 120,
+      render: (value: string | null) => {
+        if (!value) return <Text type="secondary">从未</Text>;
+        const date = new Date(value);
+        const days = Math.floor((Date.now() - date.getTime()) / 86_400_000);
+        const label =
+          days < 1 ? "今天" : days === 1 ? "昨天" : days < 30 ? `${days} 天前` : `${Math.floor(days / 30)} 个月前`;
         return (
-          <Flex align="center" gap={token.marginSM} style={{ minWidth: 0 }}>
-            <Avatar size={24} src={src} shape="circle" style={{ flexShrink: 0 }}>
-              {record.username?.[0]?.toUpperCase()}
-            </Avatar>
-            <span
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {record.username}
-            </span>
-          </Flex>
+          <Tooltip title={date.toLocaleString("zh-CN", { hour12: false })}>
+            <span>{label}</span>
+          </Tooltip>
         );
       },
     },
     {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-      sorter: true,
-      sortOrder: search.sortField === "email" ? search.sortOrder : null,
-    },
-    {
-      title: "Roles",
-      dataIndex: "roles",
-      key: "roles",
-      sorter: true,
-      sortOrder: search.sortField === "roles" ? search.sortOrder : null,
-      render: (roles: string[]) => (
-        <Space wrap>
-          {roles.map((role) => (
-            <Tag
-              key={role}
-              variant="outlined"
-              styles={{
-                root: {
-                  borderRadius: 9999,
-                  background: "transparent",
-                  boxShadow: "none",
-                },
-              }}
-            >
-              {role}
-            </Tag>
-          ))}
-        </Space>
-      ),
-    },
-    {
-      title: "Actions",
+      title: "操作",
       key: "actions",
       width: 60,
       align: "right" as const,
@@ -250,7 +278,7 @@ function UsersPage() {
               {
                 key: "edit",
                 icon: <Pencil size={token.fontSize} />,
-                label: "Edit",
+                label: "编辑",
                 onClick: () => {
                   setEditingUser(record);
                   form.setFieldsValue(record);
@@ -260,7 +288,7 @@ function UsersPage() {
               {
                 key: "delete",
                 icon: <Trash2 size={token.fontSize} />,
-                label: "Delete",
+                label: "删除",
                 danger: true,
                 onClick: () => confirmDelete(record),
               },
@@ -479,9 +507,15 @@ function UsersPage() {
         }}
         onFinish={(values) => {
           if (editingUser) {
-            updateMutation.mutate({ ...values, id: editingUser.id });
+            const { password, ...rest } = values;
+            const newPassword = password?.trim();
+            updateMutation.mutate({
+              ...rest,
+              ...(newPassword ? { password: newPassword } : {}),
+              id: editingUser.id,
+            });
           } else {
-            createMutation.mutate(values);
+            createMutation.mutate(CreateUserRequestSchema.parse(values));
           }
         }}
       />
