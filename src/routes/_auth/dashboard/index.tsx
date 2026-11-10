@@ -66,8 +66,9 @@ function DashboardPage() {
     <Flex vertical gap={token.marginLG}>
       <Row gutter={[16, 16]}>
         {tiles.map((tile) => (
-          <Col xs={24} sm={12} lg={6} key={tile.title}>
-            <Card loading={summaryQuery.isLoading}>
+          <Col xs={24} sm={12} lg={6} key={tile.title} style={{ display: "flex" }}>
+            {/* 卡片撑满整列，说明文字有无都保持同一行高度 */}
+            <Card loading={summaryQuery.isLoading} style={{ width: "100%" }}>
               <Statistic title={tile.title} value={tile.value ?? 0} />
               {tile.description ? (
                 <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
