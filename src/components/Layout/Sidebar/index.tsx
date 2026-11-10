@@ -29,11 +29,9 @@ import "./index.css";
 const { Sider } = Layout;
 /** API menu `name` → English labels for known keys; unknown keys pass through as `menu.name`. */
 const MENU_LABELS: Record<string, string> = {
-  Platform: "Platform",
-  Dashboard: "Dashboard",
-  Users: "Users",
-  "Design Engineering": "Design Engineering",
-  "Sales & Marketing": "Sales & Marketing",
+  Platform: "平台",
+  Dashboard: "仪表盘",
+  Users: "用户管理",
 };
 
 type AntMenuItem = Required<MenuProps>["items"][number];

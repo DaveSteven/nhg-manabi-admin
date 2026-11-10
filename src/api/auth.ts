@@ -1,14 +1,15 @@
 import type { LoginRequest, Session, SessionUserBase } from "./schemas";
 
 /**
- * Real backend (`nhg-manabi-api`) auth endpoints.
- * Login returns a single bearer token (`Session`); the session is restored
- * via `GET /api/me`. There is no refresh endpoint.
+ * Real backend (`nhg-manabi-api`) admin auth endpoints.
+ * Admin login is separate from the learning app: only administrators can sign in,
+ * and the returned token is admin-scoped (rejected by learning-app endpoints).
+ * The session is restored via `GET /api/admin/me`. There is no refresh endpoint.
  */
 export const AUTH_ENDPOINTS = {
-  login: "/api/auth/login",
+  login: "/api/admin/auth/login",
   logout: "/api/auth/logout",
-  me: "/api/me",
+  me: "/api/admin/me",
 } as const;
 
 export type { LoginRequest, Session, SessionUserBase };

@@ -117,7 +117,6 @@ export const CreateUserRequestSchema = z.object({
   display_name: z.string().min(1),
   password: z.string().min(1),
   current_level: z.enum(EXAM_LEVELS).catch("N5"),
-  is_admin: z.boolean().catch(false),
 });
 
 export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
@@ -141,7 +140,7 @@ export const SessionUserSchema = z.object({
 
 export type SessionUserBase = z.infer<typeof SessionUserSchema>;
 
-/** `POST /api/auth/login` response: single bearer token, unwrapped JSON. */
+/** `POST /api/admin/auth/login` response: single bearer token, unwrapped JSON. */
 export const SessionSchema = z.object({
   token: z.string().min(1),
   expires_at: z.string(),

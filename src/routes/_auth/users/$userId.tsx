@@ -87,7 +87,7 @@ function UserDetailPage() {
           onClick={() =>
             void navigate({
               to: "/users",
-              search: { limit: 100, offset: 0, sortField: null, sortOrder: null, keyword: "", role: "" },
+              search: { limit: 100, offset: 0, sortField: null, sortOrder: null, keyword: "" },
             })
           }
         />

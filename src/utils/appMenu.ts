@@ -8,7 +8,7 @@ export const APP_MENU_TREE: MenuItem[] = [
   {
     id: "g-platform",
     kind: "group",
-    name: "Platform",
+    name: "平台",
     path: null,
     icon: "IconLucideSparkles",
     permissions: null,
@@ -18,7 +18,7 @@ export const APP_MENU_TREE: MenuItem[] = [
       {
         id: "1",
         kind: "item",
-        name: "Dashboard",
+        name: "仪表盘",
         path: "/dashboard",
         icon: "IconLucideLayoutDashboard",
         children: null,
@@ -29,7 +29,7 @@ export const APP_MENU_TREE: MenuItem[] = [
       {
         id: "2",
         kind: "item",
-        name: "Users",
+        name: "用户管理",
         path: "/users",
         icon: "IconLucideUsers",
         children: null,

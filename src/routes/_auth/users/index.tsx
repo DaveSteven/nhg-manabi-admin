@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Avatar, Button, Form, App, Dropdown, theme, Tag, Flex, Tooltip, Typography } from "antd";
+import { Avatar, Button, Form, App, Dropdown, theme, Flex, Tooltip, Typography } from "antd";
 
 const { Text } = Typography;
 import type { TablePaginationConfig } from "antd/es/table/interface";
@@ -21,7 +21,6 @@ const UserSearchParamsSchema = z.object({
   sortField: z.string().nullable().catch(null),
   sortOrder: z.enum(["ascend", "descend"]).nullable().catch(null),
   keyword: z.string().catch(""),
-  role: z.string().catch(""),
 });
 
 export const Route = createFileRoute("/_auth/users/")({
@@ -77,7 +76,6 @@ function UsersPage() {
       search.limit,
       search.offset,
       search.keyword,
-      search.role,
       search.sortField,
       search.sortOrder,
     ],
@@ -88,7 +86,6 @@ function UsersPage() {
           limit: search.limit,
           offset: search.offset,
           keyword: search.keyword || undefined,
-          role: search.role || undefined,
           sortField: search.sortField ?? undefined,
           sortOrder: search.sortOrder ?? undefined,
         },
@@ -217,24 +214,6 @@ function UsersPage() {
       sorter: true,
       sortOrder: search.sortField === "current_level" ? search.sortOrder : null,
       width: 90,
-    },
-    {
-      title: "角色",
-      dataIndex: "is_admin",
-      key: "is_admin",
-      sorter: true,
-      sortOrder: search.sortField === "is_admin" ? search.sortOrder : null,
-      width: 90,
-      render: (isAdmin: boolean) =>
-        isAdmin ? (
-          <Tag color="gold" variant="outlined" style={{ borderRadius: 9999 }}>
-            管理员
-          </Tag>
-        ) : (
-          <Tag variant="outlined" style={{ borderRadius: 9999 }}>
-            用户
-          </Tag>
-        ),
     },
     {
       title: "注册时间",
@@ -448,16 +427,6 @@ function UsersPage() {
           setKeywordInput("");
           applySearch("");
         }}
-        roleValue={search.role || undefined}
-        onRoleChange={(role) =>
-          void navigate({
-            search: {
-              ...search,
-              role,
-              offset: 0,
-            },
-          })
-        }
         onCreateClick={() => {
           setEditingUser(null);
           form.resetFields();

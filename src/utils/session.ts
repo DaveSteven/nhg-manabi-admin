@@ -5,7 +5,7 @@ import { APP_MENU_TREE, filterMenuTreeByPermissions } from "@/utils/appMenu";
 import { useAuthStore } from "@/stores/auth";
 
 /**
- * Fetches `/api/me` (real backend session user), derives permissions from
+ * Fetches `/api/admin/me` (real backend admin session user), derives permissions from
  * `is_admin`, then updates `user` and sidebar `menus`.
  */
 export async function fetchSessionAndApplyToStore(): Promise<void> {

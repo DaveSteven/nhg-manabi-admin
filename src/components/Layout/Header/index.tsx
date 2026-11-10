@@ -10,8 +10,8 @@ import { Theme } from "@/components/Icon";
 const { Header: AntHeader } = Layout;
 
 const PATH_LABEL: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/users": "Users",
+  "/dashboard": "仪表盘",
+  "/users": "用户管理",
   "/exam-questions": "真题校正",
   "/403": "403",
 };
@@ -66,7 +66,7 @@ export function Header({ showBreadcrumb: showBreadcrumbProp = true }: HeaderProp
   const path = normalizePath(location.pathname);
   const segments = path.split("/").filter(Boolean);
   const firstSegmentPath = segments.length ? `/${segments[0]}` : "/dashboard";
-  const leafLabelKey = PATH_LABEL[firstSegmentPath] ?? segments[0] ?? "Dashboard";
+  const leafLabelKey = PATH_LABEL[firstSegmentPath] ?? segments[0] ?? "仪表盘";
 
   const leafIcon: LucideIcon =
     firstSegmentPath === "/users"
@@ -85,11 +85,11 @@ export function Header({ showBreadcrumb: showBreadcrumbProp = true }: HeaderProp
 
   if (onDashboard) {
     breadcrumbItems.push({
-      title: crumb(Home, "Dashboard"),
+      title: crumb(Home, "仪表盘"),
     });
   } else {
     breadcrumbItems.push({
-      title: crumb(Home, "Dashboard", "/dashboard"),
+      title: crumb(Home, "仪表盘", "/dashboard"),
     });
 
     breadcrumbItems.push({

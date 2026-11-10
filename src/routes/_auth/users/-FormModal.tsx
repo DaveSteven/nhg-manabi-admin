@@ -9,7 +9,6 @@ export type UserFormValues = {
   display_name: string;
   password?: string;
   current_level: (typeof EXAM_LEVELS)[number];
-  is_admin: boolean;
 };
 
 export type FormModalProps = {
@@ -59,25 +58,16 @@ export function FormModal({
       <Form.Item
         name="password"
         label="密码"
-        rules={
-          editingUser
-            ? []
-            : [{ required: true, message: "请输入密码" }]
-        }
-        extra={editingUser ? "留空表示不修改密码" : undefined}
+        rules={[
+          ...(editingUser ? [] : [{ required: true, message: "请输入密码" }]),
+          { min: 8, message: "密码至少 8 位" },
+        ]}
+        extra={editingUser ? "留空表示不修改密码；修改后该用户需重新登录" : "至少 8 位"}
       >
         <Input.Password autoComplete="new-password" />
       </Form.Item>
       <Form.Item name="current_level" label="当前级别" initialValue="N5">
         <Select options={LEVEL_OPTIONS} />
-      </Form.Item>
-      <Form.Item name="is_admin" label="角色" initialValue={false}>
-        <Select
-          options={[
-            { value: false, label: "用户" },
-            { value: true, label: "管理员" },
-          ]}
-        />
       </Form.Item>
     </BaseFormModal>
   );

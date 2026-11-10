@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { Button, Collapse, Flex, Input, Radio, Select, Tag, Timeline, Typography, theme } from "antd";
 import type { CSSProperties } from "react";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
@@ -40,9 +41,12 @@ function documentField(document: Record<string, unknown>, key: string): string {
   return JSON.stringify(value);
 }
 
-/** Same cleanup as the student app: drop MOJi-specific wrapper tags. */
+/**
+ * Question HTML comes from scraped sources and admin edits, so it must be
+ * sanitized before rendering (same DOMPurify profile as the student app).
+ */
 function cleanHtml(html: string): string {
-  return String(html ?? "").replace(/<\/?MOJiTest_URL>/g, "");
+  return DOMPurify.sanitize(String(html ?? ""), { USE_PROFILES: { html: true } });
 }
 
 function cleanInlineHtml(html: string): string {
