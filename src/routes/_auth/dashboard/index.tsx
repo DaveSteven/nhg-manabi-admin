@@ -39,7 +39,7 @@ function DashboardPage() {
     {
       title: "总用户数",
       value: summary?.totals.users,
-      description: summary ? `管理员 ${summary.totals.admins} 人` : "",
+      description: "",
     },
     {
       title: "7 日活跃用户",

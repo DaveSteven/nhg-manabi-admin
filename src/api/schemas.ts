@@ -424,7 +424,6 @@ export type AdminTrendPoint = z.infer<typeof AdminTrendPointSchema>;
 export const AdminSummarySchema = z.object({
   totals: z.object({
     users: z.int(),
-    admins: z.int(),
     active_users_7d: z.int(),
     new_users_7d: z.int(),
     questions_answered: z.int(),
