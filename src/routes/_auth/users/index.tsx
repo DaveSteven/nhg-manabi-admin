@@ -5,6 +5,7 @@ const { Text } = Typography;
 import type { TablePaginationConfig } from "antd/es/table/interface";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { httpClient } from "@/utils/http";
+import { formatApiDateTime, parseApiDate } from "@/utils/datetime";
 import { USER_ENDPOINTS } from "@/api/user";
 import { PaginatedResponseSchema, UserSchema, CreateUserRequestSchema } from "@/api/schemas";
 import type { User, CreateUserRequest, UpdateUserRequest } from "@/api/schemas";
@@ -192,7 +193,11 @@ function UsersPage() {
           <Typography.Link
             ellipsis
             onClick={() =>
-              void navigate({ to: "/users/$userId", params: { userId: String(record.id) }, search: {} })
+              void navigate({
+                to: "/users/$userId",
+                params: { userId: String(record.id) },
+                search: {},
+              })
             }
           >
             {record.username}
@@ -222,7 +227,7 @@ function UsersPage() {
       sorter: true,
       sortOrder: search.sortField === "created_at" ? search.sortOrder : null,
       width: 170,
-      render: (value: string) => new Date(value).toLocaleString("zh-CN", { hour12: false }),
+      render: (value: string) => formatApiDateTime(value),
     },
     {
       title: "最近活跃",
@@ -233,10 +238,16 @@ function UsersPage() {
       width: 120,
       render: (value: string | null) => {
         if (!value) return <Text type="secondary">从未</Text>;
-        const date = new Date(value);
+        const date = parseApiDate(value);
         const days = Math.floor((Date.now() - date.getTime()) / 86_400_000);
         const label =
-          days < 1 ? "今天" : days === 1 ? "昨天" : days < 30 ? `${days} 天前` : `${Math.floor(days / 30)} 个月前`;
+          days < 1
+            ? "今天"
+            : days === 1
+              ? "昨天"
+              : days < 30
+                ? `${days} 天前`
+                : `${Math.floor(days / 30)} 个月前`;
         return (
           <Tooltip title={date.toLocaleString("zh-CN", { hour12: false })}>
             <span>{label}</span>

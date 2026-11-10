@@ -1,5 +1,16 @@
 import DOMPurify from "dompurify";
-import { Button, Collapse, Flex, Input, Radio, Select, Tag, Timeline, Typography, theme } from "antd";
+import {
+  Button,
+  Collapse,
+  Flex,
+  Input,
+  Radio,
+  Select,
+  Tag,
+  Timeline,
+  Typography,
+  theme,
+} from "antd";
 import type { CSSProperties } from "react";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import ReactQuill from "react-quill-new";
@@ -7,6 +18,7 @@ import "react-quill-new/dist/quill.snow.css";
 import type { ExamQuestionDetail, ExamQuestionUpdate } from "@/api/examQuestion";
 import { ANALYSIS_STATUSES, ANSWER_STATUSES } from "@/api/schemas";
 import type { LayerGroup } from "./-PaperQuestionList";
+import { formatApiDateTime } from "@/utils/datetime";
 
 const { Text } = Typography;
 
@@ -182,65 +194,61 @@ export function LayerWorkbench({
           <Text strong style={{ fontSize: token.fontSizeLG, display: "block" }}>
             問題工作台 · {details.length} 道小题
           </Text>
-          {layerGroup?.layerTitle ? (
-            <Text type="secondary">{layerGroup.layerTitle}</Text>
-          ) : null}
+          {layerGroup?.layerTitle ? <Text type="secondary">{layerGroup.layerTitle}</Text> : null}
         </div>
       </Flex>
 
-      {layerImageUrl ? (
-        <img
-          src={layerImageUrl}
-          alt=""
-          style={imageStyle}
-        />
-      ) : null}
+      {layerImageUrl ? <img src={layerImageUrl} alt="" style={imageStyle} /> : null}
 
       <Flex vertical gap={token.marginLG} style={{ paddingBottom: 72 }}>
-        {activePassageGroup ? [activePassageGroup].map((group, groupIndex) => {
-          // 原始翻译完全一致时视为共享译文（長文型的文章翻译会被导入复制到每道小题）：
-          // 整组只显示一个输入框，编辑同步写入组内所有小题。
-          const baselineTranslations = group.tiles.map((tile) => baselines[tile.id]?.translation ?? "");
-          const sharedTranslation =
-            group.tiles.length > 1 &&
-            baselineTranslations.every((value) => value === baselineTranslations[0])
-              ? group.tiles[0].id
-              : null;
+        {activePassageGroup
+          ? [activePassageGroup].map((group, groupIndex) => {
+              // 原始翻译完全一致时视为共享译文（長文型的文章翻译会被导入复制到每道小题）：
+              // 整组只显示一个输入框，编辑同步写入组内所有小题。
+              const baselineTranslations = group.tiles.map(
+                (tile) => baselines[tile.id]?.translation ?? "",
+              );
+              const sharedTranslation =
+                group.tiles.length > 1 &&
+                baselineTranslations.every((value) => value === baselineTranslations[0])
+                  ? group.tiles[0].id
+                  : null;
 
-          return (
-            <Flex key={`${groupIndex}-${group.tiles[0]?.id}`} vertical gap={token.marginMD}>
-              {group.passage ? (
-                <div
-                  style={{
-                    padding: token.paddingMD,
-                    borderRadius: token.borderRadiusLG,
-                    background: token.colorFillAlter,
-                    maxHeight: 320,
-                    overflowY: "auto",
-                  }}
-                >
-                  <Text strong style={{ display: "block", marginBottom: token.marginSM }}>
-                    题目原文
-                  </Text>
-                  <HtmlBlock html={group.passage} />
-                </div>
-              ) : null}
-              {sharedTranslation != null ? (
-                <RichTextArea
-                  label={`共享译文（影响第 ${group.tiles.map((tile) => tile.displayNumber).join("、")} 题）`}
-                  value={drafts[sharedTranslation]?.translation ?? ""}
-                  className="translation-quill"
-                  onChange={(value) => {
-                    for (const tile of group.tiles) {
-                      onDraftChange(tile.id, (prev) => ({ ...prev, translation: value }));
-                    }
-                  }}
-                />
-              ) : null}
-              {activeTile ? renderCard(activeTile, sharedTranslation != null) : null}
-            </Flex>
-          );
-        }) : null}
+              return (
+                <Flex key={`${groupIndex}-${group.tiles[0]?.id}`} vertical gap={token.marginMD}>
+                  {group.passage ? (
+                    <div
+                      style={{
+                        padding: token.paddingMD,
+                        borderRadius: token.borderRadiusLG,
+                        background: token.colorFillAlter,
+                        maxHeight: 320,
+                        overflowY: "auto",
+                      }}
+                    >
+                      <Text strong style={{ display: "block", marginBottom: token.marginSM }}>
+                        题目原文
+                      </Text>
+                      <HtmlBlock html={group.passage} />
+                    </div>
+                  ) : null}
+                  {sharedTranslation != null ? (
+                    <RichTextArea
+                      label={`共享译文（影响第 ${group.tiles.map((tile) => tile.displayNumber).join("、")} 题）`}
+                      value={drafts[sharedTranslation]?.translation ?? ""}
+                      className="translation-quill"
+                      onChange={(value) => {
+                        for (const tile of group.tiles) {
+                          onDraftChange(tile.id, (prev) => ({ ...prev, translation: value }));
+                        }
+                      }}
+                    />
+                  ) : null}
+                  {activeTile ? renderCard(activeTile, sharedTranslation != null) : null}
+                </Flex>
+              );
+            })
+          : null}
       </Flex>
 
       <Flex
@@ -260,7 +268,11 @@ export function LayerWorkbench({
         }}
       >
         <Flex gap={token.marginXS}>
-          <Button icon={<ArrowLeft size={token.fontSize} />} disabled={!hasPrevious || saving} onClick={onPrevious}>
+          <Button
+            icon={<ArrowLeft size={token.fontSize} />}
+            disabled={!hasPrevious || saving}
+            onClick={onPrevious}
+          >
             上一题
           </Button>
           <Button disabled={!hasNext || saving} onClick={onNext}>
@@ -268,8 +280,17 @@ export function LayerWorkbench({
           </Button>
         </Flex>
         <Flex gap={token.marginXS} align="center">
-          {dirtyCount > 0 ? <Text type="warning">{dirtyCount} 题未保存</Text> : <Text type="success">已保存</Text>}
-          <Button icon={<Save size={token.fontSize} />} disabled={dirtyCount === 0} loading={saving} onClick={onSaveGroup}>
+          {dirtyCount > 0 ? (
+            <Text type="warning">{dirtyCount} 题未保存</Text>
+          ) : (
+            <Text type="success">已保存</Text>
+          )}
+          <Button
+            icon={<Save size={token.fontSize} />}
+            disabled={dirtyCount === 0}
+            loading={saving}
+            onClick={onSaveGroup}
+          >
             保存
           </Button>
           <Button
@@ -286,213 +307,255 @@ export function LayerWorkbench({
     </Flex>
   );
 
-  function renderCard(tile: LayerGroup["passageGroups"][number]["tiles"][number], hideTranslation: boolean) {
+  function renderCard(
+    tile: LayerGroup["passageGroups"][number]["tiles"][number],
+    hideTranslation: boolean,
+  ) {
     {
-          const detail = detailById.get(tile.id);
-          const draft = drafts[tile.id];
-          if (!detail || !draft) return null;
-          const active = tile.id === selectedId;
-          const dirty = JSON.stringify(draft) !== JSON.stringify(baselines[tile.id]);
-          const doc = draft.analysis_document;
+      const detail = detailById.get(tile.id);
+      const draft = drafts[tile.id];
+      if (!detail || !draft) return null;
+      const active = tile.id === selectedId;
+      const dirty = JSON.stringify(draft) !== JSON.stringify(baselines[tile.id]);
+      const doc = draft.analysis_document;
 
-          const updateDocument = (key: string, value: string) =>
-            onDraftChange(tile.id, (prev) => ({
-              ...prev,
-              analysis_document: { ...prev.analysis_document, [key]: value },
-            }));
+      const updateDocument = (key: string, value: string) =>
+        onDraftChange(tile.id, (prev) => ({
+          ...prev,
+          analysis_document: { ...prev.analysis_document, [key]: value },
+        }));
 
-          return (
-            <div
-              key={tile.id}
-              id={`workbench-card-${tile.id}`}
-              style={{
-                borderRadius: token.borderRadiusLG,
-                border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
-                background: token.colorBgContainer,
-                padding: token.paddingMD,
-              }}
-            >
-              <Flex justify="space-between" align="center" gap={token.marginSM} wrap="wrap">
-                <Flex gap={token.marginXXS} align="center">
-                  <Tag color="default" style={{ marginInlineEnd: 0 }}>
-                    第 {tile.displayNumber} 题
-                  </Tag>
-                  {dirty ? (
-                    <Tag color="warning" style={{ marginInlineEnd: 0 }}>
-                      未保存
-                    </Tag>
-                  ) : null}
-                </Flex>
-                <Flex gap={token.marginSM} wrap="wrap">
-                  <label style={{ display: "flex", alignItems: "center", gap: token.marginXXS }}>
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      答案状态
-                    </Text>
-                    <Select
-                      size="small"
-                      value={draft.answer_status}
-                      onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, answer_status: value }))}
-                      options={ANSWER_STATUSES.map((item) => ({ value: item.value, label: item.label }))}
-                      style={{ minWidth: 110 }}
-                    />
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: token.marginXXS }}>
-                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                      解析状态
-                    </Text>
-                    <Select
-                      size="small"
-                      value={draft.analysis_status}
-                      onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, analysis_status: value }))}
-                      options={ANALYSIS_STATUSES.map((item) => ({ value: item.value, label: item.label }))}
-                      style={{ minWidth: 110 }}
-                    />
-                  </label>
-                </Flex>
-              </Flex>
-
-              <div style={{ marginTop: token.marginSM }}>
-                <HtmlInline html={tile.title} />
-              </div>
-
-              {detail.media_url ? (
-                <audio controls preload="none" src={detail.media_url} style={{ width: "100%", marginTop: token.marginSM }} />
+      return (
+        <div
+          key={tile.id}
+          id={`workbench-card-${tile.id}`}
+          style={{
+            borderRadius: token.borderRadiusLG,
+            border: `1px solid ${active ? token.colorPrimary : token.colorBorderSecondary}`,
+            background: token.colorBgContainer,
+            padding: token.paddingMD,
+          }}
+        >
+          <Flex justify="space-between" align="center" gap={token.marginSM} wrap="wrap">
+            <Flex gap={token.marginXXS} align="center">
+              <Tag color="default" style={{ marginInlineEnd: 0 }}>
+                第 {tile.displayNumber} 题
+              </Tag>
+              {dirty ? (
+                <Tag color="warning" style={{ marginInlineEnd: 0 }}>
+                  未保存
+                </Tag>
               ) : null}
-              {detail.category === "listening" ? (
-                <div style={{ marginTop: token.marginMD }}>
-                  <RichTextArea
-                    label="听力原文"
-                    value={draft.subtitle}
-                    className="transcript-quill"
-                    onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, subtitle: value }))}
-                  />
-                </div>
-              ) : null}
-              {detail.image_url ? (
-                <img src={detail.image_url} alt="" style={{ ...imageStyle, marginTop: token.marginSM }} />
-              ) : null}
+            </Flex>
+            <Flex gap={token.marginSM} wrap="wrap">
+              <label style={{ display: "flex", alignItems: "center", gap: token.marginXXS }}>
+                <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                  答案状态
+                </Text>
+                <Select
+                  size="small"
+                  value={draft.answer_status}
+                  onChange={(value) =>
+                    onDraftChange(tile.id, (prev) => ({ ...prev, answer_status: value }))
+                  }
+                  options={ANSWER_STATUSES.map((item) => ({
+                    value: item.value,
+                    label: item.label,
+                  }))}
+                  style={{ minWidth: 110 }}
+                />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: token.marginXXS }}>
+                <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                  解析状态
+                </Text>
+                <Select
+                  size="small"
+                  value={draft.analysis_status}
+                  onChange={(value) =>
+                    onDraftChange(tile.id, (prev) => ({ ...prev, analysis_status: value }))
+                  }
+                  options={ANALYSIS_STATUSES.map((item) => ({
+                    value: item.value,
+                    label: item.label,
+                  }))}
+                  style={{ minWidth: 110 }}
+                />
+              </label>
+            </Flex>
+          </Flex>
 
-              <Radio.Group
-                value={draft.correct_option_id}
-                onChange={(event) =>
-                  onDraftChange(tile.id, (prev) => ({ ...prev, correct_option_id: event.target.value }))
+          <div style={{ marginTop: token.marginSM }}>
+            <HtmlInline html={tile.title} />
+          </div>
+
+          {detail.media_url ? (
+            <audio
+              controls
+              preload="none"
+              src={detail.media_url}
+              style={{ width: "100%", marginTop: token.marginSM }}
+            />
+          ) : null}
+          {detail.category === "listening" ? (
+            <div style={{ marginTop: token.marginMD }}>
+              <RichTextArea
+                label="听力原文"
+                value={draft.subtitle}
+                className="transcript-quill"
+                onChange={(value) =>
+                  onDraftChange(tile.id, (prev) => ({ ...prev, subtitle: value }))
                 }
-                style={{ display: "flex", flexDirection: "column", gap: token.marginSM, marginTop: token.marginMD }}
-              >
-                {detail.options.map((option) => {
-                  const isCorrect = draft.correct_option_id === option.id;
-                  return (
-                    <Radio key={option.id} value={option.id} style={{ alignItems: "flex-start" }}>
-                      <Flex gap={token.marginXS} align="baseline">
-                        <Text type={isCorrect ? "success" : undefined} strong={isCorrect}>
-                          {option.source_order}.
-                        </Text>
-                        <Text strong={isCorrect} style={isCorrect ? { color: token.colorSuccess } : undefined}>
-                          <HtmlInline html={option.text} />
-                        </Text>
-                      </Flex>
-                    </Radio>
-                  );
-                })}
-              </Radio.Group>
-
-              <Flex vertical gap={token.marginMD} style={{ marginTop: token.marginMD }}>
-                {hideTranslation ? null : (
-                  <RichTextArea
-                    label="题目翻译"
-                    value={draft.translation}
-                    className="translation-quill"
-                    onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, translation: value }))}
-                  />
-                )}
-                <label style={{ display: "flex", flexDirection: "column", gap: token.marginXXS }}>
-                  <Text strong style={{ fontSize: token.fontSizeSM }}>
-                    解析正文
-                  </Text>
-                  <div className="review-quill analysis-quill">
-                    <ReactQuill
-                      theme="snow"
-                      value={draft.analysis}
-                      modules={ANALYSIS_MODULES}
-                      onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, analysis: value }))}
-                    />
-                  </div>
-                </label>
-              </Flex>
-
-              <Collapse
-                ghost
-                size="small"
-                items={[
-                  {
-                    key: "more",
-                    label: <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>更多信息（审核备注 / 解析文档 / 版本历史）</Text>,
-                    styles: { body: { paddingInlineStart: 0 } },
-                    children: (
-                      <Flex vertical gap={token.marginMD}>
-                        <LabeledArea
-                          label="审核备注"
-                          value={draft.review_note}
-                          rows={2}
-                          placeholder="记录答案来源、修改原因或存疑点；学生不可见"
-                          onChange={(value) => onDraftChange(tile.id, (prev) => ({ ...prev, review_note: value }))}
-                        />
-                        <LabeledArea
-                          label="解析摘要"
-                          value={documentField(doc, "summary")}
-                          rows={2}
-                          onChange={(value) => updateDocument("summary", value)}
-                        />
-                        <LabeledArea
-                          label="原文依据"
-                          value={documentField(doc, "evidence")}
-                          rows={2}
-                          onChange={(value) => updateDocument("evidence", value)}
-                        />
-                        <LabeledArea
-                          label="知识点"
-                          value={documentField(doc, "knowledge_points")}
-                          rows={2}
-                          onChange={(value) => updateDocument("knowledge_points", value)}
-                        />
-                        <LabeledArea
-                          label="解题提示"
-                          value={documentField(doc, "tips")}
-                          rows={2}
-                          onChange={(value) => updateDocument("tips", value)}
-                        />
-                        {detail.revisions.length > 0 ? (
-                          <div>
-                            <Text strong style={{ fontSize: token.fontSizeSM }}>
-                              版本历史 · 当前 v{detail.answer_version}
-                            </Text>
-                            <Timeline
-                              style={{ marginTop: token.marginSM }}
-                              items={detail.revisions.map((revision) => ({
-                                content: (
-                                  <Flex vertical>
-                                    <Text strong style={{ fontSize: token.fontSizeSM }}>
-                                      {typeof revision.after.answer_version === "number"
-                                        ? `v${revision.after.answer_version}`
-                                        : "—"}{" "}
-                                      · {new Date(revision.created_at).toLocaleString("zh-CN")}
-                                    </Text>
-                                    <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
-                                      {revision.note || "无审核备注"}
-                                    </Text>
-                                  </Flex>
-                                ),
-                              }))}
-                            />
-                          </div>
-                        ) : null}
-                      </Flex>
-                    ),
-                  },
-                ]}
               />
             </div>
-          );
+          ) : null}
+          {detail.image_url ? (
+            <img
+              src={detail.image_url}
+              alt=""
+              style={{ ...imageStyle, marginTop: token.marginSM }}
+            />
+          ) : null}
+
+          <Radio.Group
+            value={draft.correct_option_id}
+            onChange={(event) =>
+              onDraftChange(tile.id, (prev) => ({ ...prev, correct_option_id: event.target.value }))
+            }
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: token.marginSM,
+              marginTop: token.marginMD,
+            }}
+          >
+            {detail.options.map((option) => {
+              const isCorrect = draft.correct_option_id === option.id;
+              return (
+                <Radio key={option.id} value={option.id} style={{ alignItems: "flex-start" }}>
+                  <Flex gap={token.marginXS} align="baseline">
+                    <Text type={isCorrect ? "success" : undefined} strong={isCorrect}>
+                      {option.source_order}.
+                    </Text>
+                    <Text
+                      strong={isCorrect}
+                      style={isCorrect ? { color: token.colorSuccess } : undefined}
+                    >
+                      <HtmlInline html={option.text} />
+                    </Text>
+                  </Flex>
+                </Radio>
+              );
+            })}
+          </Radio.Group>
+
+          <Flex vertical gap={token.marginMD} style={{ marginTop: token.marginMD }}>
+            {hideTranslation ? null : (
+              <RichTextArea
+                label="题目翻译"
+                value={draft.translation}
+                className="translation-quill"
+                onChange={(value) =>
+                  onDraftChange(tile.id, (prev) => ({ ...prev, translation: value }))
+                }
+              />
+            )}
+            <label style={{ display: "flex", flexDirection: "column", gap: token.marginXXS }}>
+              <Text strong style={{ fontSize: token.fontSizeSM }}>
+                解析正文
+              </Text>
+              <div className="review-quill analysis-quill">
+                <ReactQuill
+                  theme="snow"
+                  value={draft.analysis}
+                  modules={ANALYSIS_MODULES}
+                  onChange={(value) =>
+                    onDraftChange(tile.id, (prev) => ({ ...prev, analysis: value }))
+                  }
+                />
+              </div>
+            </label>
+          </Flex>
+
+          <Collapse
+            ghost
+            size="small"
+            items={[
+              {
+                key: "more",
+                label: (
+                  <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                    更多信息（审核备注 / 解析文档 / 版本历史）
+                  </Text>
+                ),
+                styles: { body: { paddingInlineStart: 0 } },
+                children: (
+                  <Flex vertical gap={token.marginMD}>
+                    <LabeledArea
+                      label="审核备注"
+                      value={draft.review_note}
+                      rows={2}
+                      placeholder="记录答案来源、修改原因或存疑点；学生不可见"
+                      onChange={(value) =>
+                        onDraftChange(tile.id, (prev) => ({ ...prev, review_note: value }))
+                      }
+                    />
+                    <LabeledArea
+                      label="解析摘要"
+                      value={documentField(doc, "summary")}
+                      rows={2}
+                      onChange={(value) => updateDocument("summary", value)}
+                    />
+                    <LabeledArea
+                      label="原文依据"
+                      value={documentField(doc, "evidence")}
+                      rows={2}
+                      onChange={(value) => updateDocument("evidence", value)}
+                    />
+                    <LabeledArea
+                      label="知识点"
+                      value={documentField(doc, "knowledge_points")}
+                      rows={2}
+                      onChange={(value) => updateDocument("knowledge_points", value)}
+                    />
+                    <LabeledArea
+                      label="解题提示"
+                      value={documentField(doc, "tips")}
+                      rows={2}
+                      onChange={(value) => updateDocument("tips", value)}
+                    />
+                    {detail.revisions.length > 0 ? (
+                      <div>
+                        <Text strong style={{ fontSize: token.fontSizeSM }}>
+                          版本历史 · 当前 v{detail.answer_version}
+                        </Text>
+                        <Timeline
+                          style={{ marginTop: token.marginSM }}
+                          items={detail.revisions.map((revision) => ({
+                            content: (
+                              <Flex vertical>
+                                <Text strong style={{ fontSize: token.fontSizeSM }}>
+                                  {typeof revision.after.answer_version === "number"
+                                    ? `v${revision.after.answer_version}`
+                                    : "—"}{" "}
+                                  · {formatApiDateTime(revision.created_at)}
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+                                  {revision.note || "无审核备注"}
+                                </Text>
+                              </Flex>
+                            ),
+                          }))}
+                        />
+                      </div>
+                    ) : null}
+                  </Flex>
+                ),
+              },
+            ]}
+          />
+        </div>
+      );
     }
   }
 }

@@ -19,6 +19,7 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { fetchUserProfile, fetchUserStatsOverview, fetchUserStatsTrend } from "@/api/user";
 import { useSettingsStore } from "@/stores/settings";
+import { formatApiDateTime } from "@/utils/datetime";
 import { UserActivityHeatmap } from "./-UserActivityHeatmap";
 import {
   GRAN_DAYS,
@@ -46,7 +47,7 @@ const METRIC_OPTIONS = [
 ];
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString("zh-CN", { hour12: false });
+  return formatApiDateTime(value);
 }
 
 function UserDetailPage() {
@@ -75,7 +76,9 @@ function UserDetailPage() {
   const profile = profileQuery.data;
   const overview = overviewQuery.data;
   const trend = trendQuery.data;
-  const profileInitial = (profile?.display_name ?? profile?.username ?? "").trim()[0]?.toUpperCase();
+  const profileInitial = (profile?.display_name ?? profile?.username ?? "")
+    .trim()[0]
+    ?.toUpperCase();
 
   return (
     <Flex vertical gap={token.marginMD} style={{ flex: "1 1 0%", minHeight: 0, overflow: "auto" }}>
