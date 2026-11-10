@@ -2,7 +2,7 @@ import { Layout, Button, Space, theme, Breadcrumb, Flex, Divider, Grid } from "a
 import type { ItemType } from "antd/es/breadcrumb/Breadcrumb";
 import { useSettingsStore } from "@/stores/settings";
 import { Link, useLocation, useMatches } from "@tanstack/react-router";
-import { Home, PanelLeft, ShieldAlert, Users } from "lucide-react";
+import { ClipboardCheck, Home, PanelLeft, ShieldAlert, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Theme } from "@/components/Icon";
@@ -12,6 +12,7 @@ const { Header: AntHeader } = Layout;
 const PATH_LABEL: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/users": "Users",
+  "/exam-questions": "真题校正",
   "/403": "403",
 };
 
@@ -68,7 +69,13 @@ export function Header({ showBreadcrumb: showBreadcrumbProp = true }: HeaderProp
   const leafLabelKey = PATH_LABEL[firstSegmentPath] ?? segments[0] ?? "Dashboard";
 
   const leafIcon: LucideIcon =
-    firstSegmentPath === "/users" ? Users : firstSegmentPath === "/403" ? ShieldAlert : Home;
+    firstSegmentPath === "/users"
+      ? Users
+      : firstSegmentPath === "/exam-questions"
+        ? ClipboardCheck
+        : firstSegmentPath === "/403"
+          ? ShieldAlert
+          : Home;
 
   const leafLabel = leafLabelKey;
 
@@ -90,7 +97,10 @@ export function Header({ showBreadcrumb: showBreadcrumbProp = true }: HeaderProp
     });
 
     if (segments.length > 1) {
-      const tail = segments.slice(1).join(" / ");
+      const tail =
+        firstSegmentPath === "/exam-questions" && segments.length === 2
+          ? "详情"
+          : segments.slice(1).join(" / ");
       if (tail) {
         breadcrumbItems.push({ title: tail });
       }

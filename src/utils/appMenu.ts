@@ -50,40 +50,6 @@ export const APP_MENU_TREE: MenuItem[] = [
       },
     ],
   },
-  {
-    id: "g-projects",
-    kind: "group",
-    name: "Projects",
-    path: null,
-    icon: "IconLucideFolderKanban",
-    children: [
-      {
-        id: "3",
-        kind: "item",
-        name: "Design Engineering",
-        path: "/design-engineering",
-        icon: "IconLucideBookOpen",
-        children: null,
-        permissions: null,
-        sort: 0,
-        hidden: false,
-      },
-      {
-        id: "4",
-        kind: "item",
-        name: "Sales & Marketing",
-        path: "/sales-marketing",
-        icon: "IconLucideBriefcase",
-        children: null,
-        permissions: ["user:view"],
-        sort: 1,
-        hidden: false,
-      },
-    ],
-    permissions: null,
-    sort: 1,
-    hidden: false,
-  },
 ];
 
 function hasRequiredPermissions(
@@ -140,8 +106,6 @@ export function requiredPermissionForPath(pathname: string): string | null {
     "/dashboard": null,
     "/users": "user:view",
     "/exam-questions": "user:view",
-    "/design-engineering": null,
-    "/sales-marketing": "user:view",
     "/403": null,
   };
   return map[p] ?? null;

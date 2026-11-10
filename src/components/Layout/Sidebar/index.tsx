@@ -30,7 +30,6 @@ const { Sider } = Layout;
 /** API menu `name` → English labels for known keys; unknown keys pass through as `menu.name`. */
 const MENU_LABELS: Record<string, string> = {
   Platform: "Platform",
-  Projects: "Projects",
   Dashboard: "Dashboard",
   Users: "Users",
   "Design Engineering": "Design Engineering",
