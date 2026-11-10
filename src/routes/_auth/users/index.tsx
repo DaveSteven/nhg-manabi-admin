@@ -70,7 +70,7 @@ function UsersPage() {
   const { data, isLoading, createMutation, updateMutation, deleteMutation } = useResourceCRUD<
     { list: User[]; total: number },
     CreateUserRequest,
-    UpdateUserRequest & { id: number }
+    UpdateUserRequest & { id: string }
   >({
     queryKey: [
       "users",
@@ -172,12 +172,10 @@ function UsersPage() {
 
   const columns = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      sorter: true,
-      sortOrder: search.sortField === "id" ? search.sortOrder : null,
+      title: "#",
+      key: "index",
       width: 70,
+      render: (_: unknown, __: User, index: number) => search.offset + index + 1,
     },
     {
       title: "用户名",

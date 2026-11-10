@@ -5,7 +5,7 @@ import { z } from "zod/v4";
  * Field names stay snake_case to match the API contract verbatim.
  */
 export const UserSchema = z.object({
-  id: z.int(),
+  id: z.string().uuid(),
   username: z.string(),
   display_name: z.string(),
   current_level: z.string(),
@@ -131,7 +131,7 @@ export type UpdateUserRequest = z.infer<typeof UpdateUserRequestSchema>;
  * Field names stay snake_case to match the API contract verbatim.
  */
 export const SessionUserSchema = z.object({
-  id: z.int(),
+  id: z.string().uuid(),
   username: z.string(),
   display_name: z.string(),
   current_level: z.string(),
@@ -255,7 +255,7 @@ export type ExamQuestionList = z.infer<typeof ExamQuestionListSchema>;
 
 export const ExamQuestionRevisionSchema = z.object({
   id: z.int(),
-  user_id: z.int(),
+  user_id: z.string().uuid(),
   before: z.record(z.string(), z.unknown()),
   after: z.record(z.string(), z.unknown()),
   note: z.string(),
@@ -301,7 +301,7 @@ export const ExamQuestionDetailSchema = ExamQuestionDetailBaseSchema.extend({
   analysis: z.string(),
   analysis_document: z.record(z.string(), z.unknown()).catch({}),
   review_note: z.string(),
-  reviewed_by: z.int().nullable(),
+  reviewed_by: z.string().uuid().nullable(),
   reviewed_at: z.string().nullable(),
   answer_version: z.int(),
   revisions: z.array(ExamQuestionRevisionSchema).catch([]),
