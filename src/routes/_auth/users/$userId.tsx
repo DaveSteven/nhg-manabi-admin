@@ -107,11 +107,6 @@ function UserDetailPage() {
                 <Tag color="gold" variant="outlined" style={{ borderRadius: 9999 }}>
                   {profile.current_level}
                 </Tag>
-                {profile.is_admin ? (
-                  <Tag variant="outlined" style={{ borderRadius: 9999 }}>
-                    管理员
-                  </Tag>
-                ) : null}
               </Flex>
               <Text type="secondary">
                 @{profile.username} · 注册于 {formatDate(profile.created_at)}
