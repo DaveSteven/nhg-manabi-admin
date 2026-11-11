@@ -127,15 +127,14 @@ export const UpdateUserRequestSchema = CreateUserRequestSchema.partial();
 export type UpdateUserRequest = z.infer<typeof UpdateUserRequestSchema>;
 
 /**
- * Real backend (`nhg-manabi-api`) session user (`UserOut`).
+ * Real backend (`nhg-manabi-api`) admin session user (`AdminMeOut`).
  * Field names stay snake_case to match the API contract verbatim.
+ * 能登录管理端即管理员，无 is_admin/current_level 字段（D12 拆表）。
  */
 export const SessionUserSchema = z.object({
   id: z.string().uuid(),
   username: z.string(),
   display_name: z.string(),
-  current_level: z.string(),
-  is_admin: z.boolean(),
 });
 
 export type SessionUserBase = z.infer<typeof SessionUserSchema>;
@@ -150,8 +149,8 @@ export const SessionSchema = z.object({
 export type Session = z.infer<typeof SessionSchema>;
 
 /**
- * Frontend session user: base `UserOut` plus permissions derived from
- * `is_admin` (the real backend has no permissions endpoint).
+ * Frontend session user: base `AdminMeOut` plus permissions (the real backend
+ * has no permissions endpoint).
  */
 export type SessionUser = SessionUserBase & { permissions: string[] };
 
@@ -159,7 +158,7 @@ export type SessionUser = SessionUserBase & { permissions: string[] };
 export const ADMIN_PERMISSIONS = ["user:view"] as const;
 
 export function toSessionUser(base: SessionUserBase): SessionUser {
-  return { ...base, permissions: base.is_admin ? [...ADMIN_PERMISSIONS] : [] };
+  return { ...base, permissions: [...ADMIN_PERMISSIONS] };
 }
 
 /*
