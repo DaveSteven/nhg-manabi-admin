@@ -74,24 +74,27 @@ function UserActivityHeatmapImpl({ activity, darkMode }: { activity: StatsActivi
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: GAP, overflowX: "auto" }}>
-      <div style={{ display: "flex", gap: GAP, marginLeft: 24 }}>
-        {monthLabels.map((label, i) => (
-          <div key={i} style={{ width: CELL, position: "relative" }}>
-            {label ? (
-              <span
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  whiteSpace: "nowrap",
-                  fontSize: token.fontSizeSM,
-                  color: token.colorTextSecondary,
-                }}
-              >
-                {label}
-              </span>
-            ) : null}
-          </div>
-        ))}
+      {/* 月份标签：单个相对定位容器，与色块网格共享坐标系（左侧让出周标签列 24px + gap）。
+          之前每列一个 width:CELL 的零高度槽 + nowrap 绝对定位标签，行高塌陷导致文字压住首行色块，
+          且 marginLeft 24 与网格实际偏移 24+GAP 错 2px。 */}
+      <div style={{ position: "relative", height: 16, marginLeft: 24 + GAP }}>
+        {monthLabels.map((label, i) =>
+          label ? (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                left: i * (CELL + GAP),
+                whiteSpace: "nowrap",
+                fontSize: token.fontSizeSM,
+                lineHeight: "16px",
+                color: token.colorTextSecondary,
+              }}
+            >
+              {label}
+            </span>
+          ) : null,
+        )}
       </div>
       <div style={{ display: "flex", gap: GAP }}>
         <div style={{ width: 24, display: "flex", flexDirection: "column", gap: GAP }}>

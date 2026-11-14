@@ -12,6 +12,10 @@ export const UserSchema = z.object({
   is_admin: z.boolean(),
   created_at: z.string(),
   last_active_at: z.string().nullable(),
+  // T-031：email / 激活时间（B4 老账号 email 为 null）+ 停用时间（null = 正常）
+  email: z.string().nullable(),
+  activated_at: z.string().nullable(),
+  disabled_at: z.string().nullable(),
 });
 
 export type User = z.infer<typeof UserSchema>;

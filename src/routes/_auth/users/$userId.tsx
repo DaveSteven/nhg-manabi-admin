@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  App,
   Avatar,
   Button,
   Card,
@@ -15,9 +16,16 @@ import {
   Typography,
   theme,
 } from "antd";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserX, UserCheck } from "lucide-react";
 import { useState } from "react";
-import { fetchUserProfile, fetchUserStatsOverview, fetchUserStatsTrend } from "@/api/user";
+import {
+  disableUser,
+  enableUser,
+  fetchUserProfile,
+  fetchUserStatsOverview,
+  fetchUserStatsTrend,
+} from "@/api/user";
+import type { User } from "@/api/schemas";
 import { useSettingsStore } from "@/stores/settings";
 import { formatApiDateTime } from "@/utils/datetime";
 import { UserActivityHeatmap } from "./-UserActivityHeatmap";
@@ -34,6 +42,13 @@ const { Text, Title } = Typography;
 export const Route = createFileRoute("/_auth/users/$userId")({
   component: UserDetailPage,
 });
+
+/** T-031 三态：停用优先于未激活（与列表页口径一致）。 */
+function userStatus(record: User): { label: string; color: "default" | "orange" | "red" } {
+  if (record.disabled_at) return { label: "已停用", color: "red" };
+  if (!record.activated_at) return { label: "未激活", color: "orange" };
+  return { label: "正常", color: "default" };
+}
 
 const GRANULARITY_OPTIONS = [
   { value: "day", label: "按日" },
@@ -54,6 +69,8 @@ function UserDetailPage() {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const { message, modal } = App.useApp();
+  const queryClient = useQueryClient();
   const darkMode = useSettingsStore((s) => s.darkMode);
 
   const [metric, setMetric] = useState<TrendMetric>("volume");
@@ -79,6 +96,31 @@ function UserDetailPage() {
   const profileInitial = (profile?.display_name ?? profile?.username ?? "")
     .trim()[0]
     ?.toUpperCase();
+
+  const statusMutation = useMutation({
+    mutationFn: ({ action }: { action: "disable" | "enable" }) =>
+      action === "disable" ? disableUser(userId) : enableUser(userId),
+    onSuccess: (_data, vars) => {
+      message.success(vars.action === "disable" ? "已停用" : "已恢复");
+      void queryClient.invalidateQueries({ queryKey: ["admin-user-profile", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: () => {
+      message.error("操作失败");
+    },
+  });
+
+  const confirmDisable = () => {
+    if (!profile) return;
+    modal.confirm({
+      title: `确认停用 ${profile.username}？`,
+      content: "停用后该用户现有登录立即失效且无法登录，学习数据保留，可随时恢复。",
+      okText: "停用",
+      okType: "danger",
+      cancelText: "取消",
+      onOk: () => statusMutation.mutateAsync({ action: "disable" }),
+    });
+  };
 
   return (
     <Flex vertical gap={token.marginMD} style={{ flex: "1 1 0%", minHeight: 0, overflow: "auto" }}>
@@ -107,11 +149,34 @@ function UserDetailPage() {
                 <Tag color="gold" variant="outlined" style={{ borderRadius: 9999 }}>
                   {profile.current_level}
                 </Tag>
+                {(() => {
+                  const status = userStatus(profile);
+                  return <Tag color={status.color}>{status.label}</Tag>;
+                })()}
               </Flex>
               <Text type="secondary">
-                @{profile.username} · 注册于 {formatDate(profile.created_at)}
+                @{profile.username} · {profile.email ?? "—"} · 注册于{" "}
+                {formatDate(profile.created_at)}
               </Text>
             </Flex>
+            {profile.disabled_at ? (
+              <Button
+                icon={<UserCheck size={token.fontSize} />}
+                style={{ marginLeft: "auto" }}
+                onClick={() => statusMutation.mutate({ action: "enable" })}
+              >
+                恢复
+              </Button>
+            ) : (
+              <Button
+                danger
+                icon={<UserX size={token.fontSize} />}
+                style={{ marginLeft: "auto" }}
+                onClick={confirmDisable}
+              >
+                停用
+              </Button>
+            )}
           </>
         ) : profileQuery.isError ? (
           <Text type="danger">用户不存在或已被删除</Text>

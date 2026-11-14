@@ -1,16 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Avatar, Button, Form, App, Dropdown, theme, Flex, Tooltip, Typography } from "antd";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Avatar, Button, Form, App, Dropdown, Tag, theme, Flex, Tooltip, Typography } from "antd";
 
 const { Text } = Typography;
 import type { TablePaginationConfig } from "antd/es/table/interface";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { httpClient } from "@/utils/http";
 import { formatApiDateTime, parseApiDate } from "@/utils/datetime";
-import { USER_ENDPOINTS } from "@/api/user";
+import { disableUser, enableUser, USER_ENDPOINTS } from "@/api/user";
 import { PaginatedResponseSchema, UserSchema, CreateUserRequestSchema } from "@/api/schemas";
 import type { User, CreateUserRequest, UpdateUserRequest } from "@/api/schemas";
 import { z } from "zod/v4";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, UserX, UserCheck } from "lucide-react";
 import { DataTable } from "@/components/DataTable";
 import { useResourceCRUD } from "@/hooks/useResourceCRUD";
 import { Toolbar } from "./-Toolbar";
@@ -30,6 +31,13 @@ export const Route = createFileRoute("/_auth/users/")({
 });
 
 const paginatedUserSchema = PaginatedResponseSchema(UserSchema);
+
+/** T-031 三态：停用优先于未激活（已停用账号无论激活与否都不可登录）。 */
+function userStatus(record: User): { label: string; color: "default" | "orange" | "red" } {
+  if (record.disabled_at) return { label: "已停用", color: "red" };
+  if (!record.activated_at) return { label: "未激活", color: "orange" };
+  return { label: "正常", color: "default" };
+}
 
 const MESSAGE_KEY_USER_CREATE = "user-mutation-create";
 const MESSAGE_KEY_USER_UPDATE = "user-mutation-update";
@@ -170,6 +178,30 @@ function UsersPage() {
     });
   };
 
+  const queryClient = useQueryClient();
+  const statusMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: "disable" | "enable" }) =>
+      action === "disable" ? disableUser(id) : enableUser(id),
+    onSuccess: (_data, vars) => {
+      message.success(vars.action === "disable" ? "已停用" : "已恢复");
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: () => {
+      message.error("操作失败");
+    },
+  });
+
+  const confirmDisable = (record: User) => {
+    modal.confirm({
+      title: `确认停用 ${record.username}？`,
+      content: "停用后该用户现有登录立即失效且无法登录，学习数据保留，可随时恢复。",
+      okText: "停用",
+      okType: "danger",
+      cancelText: "取消",
+      onOk: () => statusMutation.mutateAsync({ id: record.id, action: "disable" }),
+    });
+  };
+
   const columns = [
     {
       title: "#",
@@ -211,12 +243,38 @@ function UsersPage() {
       sortOrder: search.sortField === "display_name" ? search.sortOrder : null,
     },
     {
+      title: "邮箱",
+      dataIndex: "email",
+      key: "email",
+      width: 200,
+      render: (value: string | null) =>
+        value ? (
+          <Tooltip title={value}>
+            <Typography.Text ellipsis style={{ maxWidth: 180 }}>
+              {value}
+            </Typography.Text>
+          </Tooltip>
+        ) : (
+          // B4 代建老账号无 email
+          <Text type="secondary">—</Text>
+        ),
+    },
+    {
       title: "级别",
       dataIndex: "current_level",
       key: "current_level",
       sorter: true,
       sortOrder: search.sortField === "current_level" ? search.sortOrder : null,
       width: 90,
+    },
+    {
+      title: "状态",
+      key: "status",
+      width: 90,
+      render: (_: unknown, record: User) => {
+        const status = userStatus(record);
+        return <Tag color={status.color}>{status.label}</Tag>;
+      },
     },
     {
       title: "注册时间",
@@ -273,6 +331,25 @@ function UsersPage() {
                   setModalOpen(true);
                 },
               },
+              ...(record.disabled_at
+                ? [
+                    {
+                      key: "enable",
+                      icon: <UserCheck size={token.fontSize} />,
+                      label: "恢复",
+                      onClick: () =>
+                        statusMutation.mutate({ id: record.id, action: "enable" as const }),
+                    },
+                  ]
+                : [
+                    {
+                      key: "disable",
+                      icon: <UserX size={token.fontSize} />,
+                      label: "停用",
+                      danger: true,
+                      onClick: () => confirmDisable(record),
+                    },
+                  ]),
               {
                 key: "delete",
                 icon: <Trash2 size={token.fontSize} />,
