@@ -73,10 +73,6 @@ function HtmlInline({ html }: { html: string }) {
   return <span dangerouslySetInnerHTML={{ __html: cleanInlineHtml(html) }} />;
 }
 
-function HtmlBlock({ html, style }: { html: string; style?: CSSProperties }) {
-  return <div style={style} dangerouslySetInnerHTML={{ __html: cleanHtml(html) }} />;
-}
-
 function LabeledArea({
   label,
   value,
@@ -134,7 +130,17 @@ function RichTextArea({
         {label}
       </Text>
       <div className={`review-quill ${className ?? ""}`}>
-        <ReactQuill theme="snow" value={value} modules={ANALYSIS_MODULES} onChange={onChange} />
+        <ReactQuill
+          theme="snow"
+          value={value}
+          modules={ANALYSIS_MODULES}
+          onChange={(content, _delta, source) => {
+            // Quill 挂载规范化初始 HTML 时会以 source="api" 触发一次 change，
+            // 不筛掉会把未编辑的题标记为未保存。
+            if (source !== "user") return;
+            onChange(content);
+          }}
+        />
       </div>
     </label>
   );
@@ -217,20 +223,18 @@ export function LayerWorkbench({
               return (
                 <Flex key={`${groupIndex}-${group.tiles[0]?.id}`} vertical gap={token.marginMD}>
                   {group.passage ? (
-                    <div
-                      style={{
-                        padding: token.paddingMD,
-                        borderRadius: token.borderRadiusLG,
-                        background: token.colorFillAlter,
-                        maxHeight: 320,
-                        overflowY: "auto",
+                    // T-032：题目原文改为富文本编辑（原文即 HTML 存储，与学生端渲染一致）。
+                    // 组内小题共享同一篇原文，编辑同步写入全组 draft（与共享译文同模式）。
+                    <RichTextArea
+                      label="题目原文"
+                      value={drafts[group.tiles[0]?.id]?.passage ?? ""}
+                      className="passage-quill"
+                      onChange={(value) => {
+                        for (const tile of group.tiles) {
+                          onDraftChange(tile.id, (prev) => ({ ...prev, passage: value }));
+                        }
                       }}
-                    >
-                      <Text strong style={{ display: "block", marginBottom: token.marginSM }}>
-                        题目原文
-                      </Text>
-                      <HtmlBlock html={group.passage} />
-                    </div>
+                    />
                   ) : null}
                   {sharedTranslation != null ? (
                     <RichTextArea
@@ -469,9 +473,10 @@ export function LayerWorkbench({
                   theme="snow"
                   value={draft.analysis}
                   modules={ANALYSIS_MODULES}
-                  onChange={(value) =>
-                    onDraftChange(tile.id, (prev) => ({ ...prev, analysis: value }))
-                  }
+                  onChange={(value, _delta, source) => {
+                    if (source !== "user") return;
+                    onDraftChange(tile.id, (prev) => ({ ...prev, analysis: value }));
+                  }}
                 />
               </div>
             </label>

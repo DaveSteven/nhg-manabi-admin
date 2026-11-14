@@ -41,6 +41,7 @@ function seedDraft(detail: ExamQuestionDetail): ExamQuestionUpdate {
     subtitle: detail.subtitle,
     translation: detail.translation,
     analysis: detail.analysis,
+    passage: detail.passage,
     analysis_document: detail.analysis_document,
     review_note: detail.review_note,
   });

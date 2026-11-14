@@ -69,6 +69,15 @@
   line-height: 1.8;
 }
 
+/* 题目原文（读解文章等长 HTML）：固定编辑区高度，内部滚动 */
+.passage-quill .ql-editor {
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
 /* 学生端预览：解析正文按 HTML 渲染 */
 .analysis-preview p {
   margin: 0 0 8px;

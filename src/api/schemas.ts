@@ -327,6 +327,8 @@ export const ExamQuestionUpdateSchema = z.object({
   correct_option_id: z.int().nullable(),
   answer_status: z.string(),
   analysis_status: z.string(),
+  /** 题组共享原文（T-032 富文本编辑）；组内小题同文，工作台整组同步写。 */
+  passage: z.string().default(""),
   subtitle: z.string().default(""),
   translation: z.string().default(""),
   analysis: z.string().default(""),
